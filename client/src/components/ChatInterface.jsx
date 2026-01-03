@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { sendMessage, sendAudio, getScenarios } from '../services/api';
 import { supabase } from '../supabaseClient';
-import { Send, User, Bot, Loader2, CheckCircle } from 'lucide-react';
+import { Send, User, Bot, Loader2, CheckCircle, MessageSquare } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AudioRecorder from './AudioRecorder';
+import FeedbackModal from './FeedbackModal';
 
 export default function ChatInterface({ session }) {
     const [messages, setMessages] = useState([
@@ -15,6 +16,7 @@ export default function ChatInterface({ session }) {
     const [scenarios, setScenarios] = useState([]);
     const [selectedScenario, setSelectedScenario] = useState(null);
     const [completedScenarios, setCompletedScenarios] = useState(new Set()); // Set of scenario IDs
+    const [isFeedbackOpen, setIsFeedbackOpen] = useState(false);
     const messagesEndRef = useRef(null);
 
     // Load Scenarios & Progress
@@ -119,7 +121,7 @@ export default function ChatInterface({ session }) {
     };
 
     return (
-        <div className="flex flex-col h-screen bg-slate-900 text-slate-100 max-w-md mx-auto shadow-xl border-x border-slate-800">
+        <div className="flex flex-col h-screen bg-slate-900 text-slate-100 max-w-md mx-auto shadow-xl border-x border-slate-800 relative">
 
             {/* Header */}
             <div className="p-4 border-b border-slate-800 bg-slate-900/50 backdrop-blur-md sticky top-0 z-10">
@@ -131,23 +133,33 @@ export default function ChatInterface({ session }) {
                         <p className="text-xs text-slate-400">Práctica Conversacional</p>
                     </div>
 
-                    {scenarios.length > 0 && (
-                        <select
-                            value={selectedScenario?.id || ''}
-                            onChange={(e) => {
-                                const s = scenarios.find(sc => sc.id === e.target.value);
-                                setSelectedScenario(s);
-                                setMessages([{ role: 'system', content: s.system_prompt }]); // Reset chat on change?
-                            }}
-                            className="bg-slate-800 text-xs text-white p-2 rounded-lg outline-none border border-slate-700"
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setIsFeedbackOpen(true)}
+                            className="p-2 text-slate-400 hover:text-white transition-colors"
+                            title="Enviar Feedback"
                         >
-                            {scenarios.map(s => (
-                                <option key={s.id} value={s.id}>
-                                    {completedScenarios.has(s.id) ? '✅ ' : ''}{s.emoji} {s.title}
-                                </option>
-                            ))}
-                        </select>
-                    )}
+                            <MessageSquare className="w-5 h-5" />
+                        </button>
+
+                        {scenarios.length > 0 && (
+                            <select
+                                value={selectedScenario?.id || ''}
+                                onChange={(e) => {
+                                    const s = scenarios.find(sc => sc.id === e.target.value);
+                                    setSelectedScenario(s);
+                                    setMessages([{ role: 'system', content: s.system_prompt }]); // Reset chat on change?
+                                }}
+                                className="bg-slate-800 text-xs text-white p-2 rounded-lg outline-none border border-slate-700"
+                            >
+                                {scenarios.map(s => (
+                                    <option key={s.id} value={s.id}>
+                                        {completedScenarios.has(s.id) ? '✅ ' : ''}{s.emoji} {s.title}
+                                    </option>
+                                ))}
+                            </select>
+                        )}
+                    </div>
                 </div>
                 {selectedScenario && (
                     <div className="flex justify-between items-start mt-2">
@@ -222,6 +234,12 @@ export default function ChatInterface({ session }) {
                     </form>
                 </div>
             </div>
+
+            <FeedbackModal
+                isOpen={isFeedbackOpen}
+                onClose={() => setIsFeedbackOpen(false)}
+                userId={session?.user?.id}
+            />
         </div>
     );
 }
