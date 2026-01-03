@@ -1,8 +1,9 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { supabase } from './supabaseClient';
 import Login from './components/Login';
 import ChatInterface from './components/ChatInterface';
+import LandingPage from './components/LandingPage';
 
 function App() {
   const [session, setSession] = useState(null);
@@ -33,7 +34,7 @@ function App() {
         <Routes>
           <Route path="/login" element={!session ? <Login /> : <Navigate to="/dashboard" />} />
           <Route path="/dashboard" element={session ? <ChatInterface session={session} /> : <Navigate to="/login" />} />
-          <Route path="/" element={<Navigate to={session ? "/dashboard" : "/login"} />} />
+          <Route path="/" element={<LandingPage />} />
         </Routes>
       </div>
     </Router>
