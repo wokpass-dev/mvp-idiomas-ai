@@ -15,10 +15,9 @@ services:
       - key: ELEVENLABS_API_KEY
         sync: false
 
+staticSites:
   # Frontend Static Site
-  - type: static
-    name: mvp-idiomas-client
-    env: static
+  - name: mvp-idiomas-client
     plan: free
     root: client
     buildCommand: npm install && npm run build
