@@ -5,7 +5,7 @@ services:
     name: mvp-idiomas-server
     env: node
     plan: free
-    root: server
+    rootDir: server
     buildCommand: npm install
     startCommand: node index.js
     envVars:
@@ -20,7 +20,7 @@ staticSites:
   # Frontend Static Site
   - name: mvp-idiomas-client
     plan: free
-    root: client
+    rootDir: client
     buildCommand: npm install && npm run build
     publishDir: dist
     routes:
