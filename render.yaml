@@ -20,7 +20,6 @@ services:
   - type: web
     name: mvp-idiomas-client
     env: static
-    plan: free
     rootDir: client
     buildCommand: npm install && npm run build
     staticPublishPath: dist
