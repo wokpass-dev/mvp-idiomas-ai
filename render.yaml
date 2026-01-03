@@ -1,0 +1,35 @@
+services:
+  # Backend Node.js Service
+  - type: web
+    name: mvp-idiomas-server
+    env: node
+    plan: free
+    root: server
+    buildCommand: npm install
+    startCommand: node index.js
+    envVars:
+      - key: PORT
+        value: 10000
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ELEVENLABS_API_KEY
+        sync: false
+
+  # Frontend Static Site
+  - type: static
+    name: mvp-idiomas-client
+    env: static
+    plan: free
+    root: client
+    buildCommand: npm install && npm run build
+    publishDir: dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        fromService:
+          type: web
+          name: mvp-idiomas-server
+          property: url
