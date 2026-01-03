@@ -2,7 +2,13 @@ import axios from 'axios';
 
 const getBaseUrl = () => {
     let url = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
-    // If we get a root URL (like from Render), append /api
+
+    // If protocol is missing (e.g. Render "host" property), prepend https://
+    if (!url.startsWith('http')) {
+        url = `https://${url}`;
+    }
+
+    // Append /api if missing
     if (!url.endsWith('/api')) {
         url = `${url.replace(/\/$/, '')}/api`;
     }
