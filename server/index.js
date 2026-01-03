@@ -10,7 +10,11 @@ const FormData = require('form-data');
 const axios = require('axios');
 
 // Configure Multer for temp storage
-const upload = multer({ dest: 'uploads/' });
+const uploadDir = 'uploads';
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+}
+const upload = multer({ dest: uploadDir + '/' });
 
 // Helper: Delete file
 const cleanup = (filePath) => {
