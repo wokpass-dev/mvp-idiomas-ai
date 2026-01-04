@@ -26,7 +26,16 @@ const cleanup = (filePath) => {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// CORS Configuration
+const corsOptions = {
+  origin: '*', // Allow all origins for MVP. For prod, could restrict to client URL.
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+  credentials: true
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Enable pre-flight for all routes
 app.use(express.json());
 
 // Request logging middleware
@@ -177,6 +186,12 @@ app.post('/api/speak', upload.single('audio'), async (req, res) => {
   } finally {
     cleanup(audioFile.path); // Clean up temp file
   }
+});
+
+// Global Error Handler
+app.use((err, req, res, next) => {
+  console.error('Unhandled Server Error:', err);
+  res.status(500).json({ error: 'Internal Server Error', details: err.message });
 });
 
 app.listen(PORT, () => {
