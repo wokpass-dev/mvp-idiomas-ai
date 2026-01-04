@@ -105,7 +105,10 @@ export default function ChatInterface({ session }) {
             setMessages(prev => [...prev, response]);
         } catch (error) {
             console.error('Failed to send message:', error);
-            setMessages(prev => [...prev, { role: 'assistant', content: 'Error: No pude conectar con el servidor.' }]);
+            const errorMsg = error.response ?
+                `Server Error: ${error.response.status} - ${JSON.stringify(error.response.data)}` :
+                `Connection Error: ${error.message}`;
+            setMessages(prev => [...prev, { role: 'assistant', content: errorMsg }]);
         } finally {
             setLoading(false);
         }
