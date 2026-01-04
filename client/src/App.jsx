@@ -5,6 +5,8 @@ import Login from './components/Login';
 import ChatInterface from './components/ChatInterface';
 import LandingPage from './components/LandingPage';
 
+import LanguageSelector from './components/LanguageSelector';
+
 function App() {
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -32,7 +34,8 @@ function App() {
     <Router>
       <div className="min-h-screen bg-black">
         <Routes>
-          <Route path="/login" element={!session ? <Login /> : <Navigate to="/dashboard" />} />
+          <Route path="/login" element={!session ? <Login /> : <Navigate to="/languages" />} />
+          <Route path="/languages" element={session ? <LanguageSelector /> : <Navigate to="/login" />} />
           <Route path="/dashboard" element={session ? <ChatInterface session={session} /> : <Navigate to="/login" />} />
           <Route path="/" element={<LandingPage />} />
         </Routes>
