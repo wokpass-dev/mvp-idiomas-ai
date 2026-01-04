@@ -35,7 +35,7 @@ const corsOptions = {
 };
 
 app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // Enable pre-flight for all routes
+// app.options('*', cors(corsOptions)); // Removed to fix Express 5 PathError
 app.use(express.json());
 
 // Request logging middleware
