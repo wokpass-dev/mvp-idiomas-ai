@@ -1,17 +1,28 @@
 import axios from 'axios';
 
 const getBaseUrl = () => {
-    let url = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+    // 1. Try environment variable
+    let url = import.meta.env.VITE_API_URL;
 
-    // If protocol is missing (e.g. Render "host" property), prepend https://
+    // 2. Fallback if missing
+    if (!url) {
+        // If in production (Render), use the hardcoded production URL
+        // If in development (Local), use localhost
+        url = import.meta.env.PROD
+            ? 'https://mvp-idiomas-server.onrender.com/api'
+            : 'http://localhost:3000/api';
+    }
+
+    // 3. Normalization (fix protocol and /api suffix)
     if (!url.startsWith('http')) {
         url = `https://${url}`;
     }
 
-    // Append /api if missing
     if (!url.endsWith('/api')) {
         url = `${url.replace(/\/$/, '')}/api`;
     }
+
+    console.log('API Base URL:', url); // Debug check
     return url;
 };
 
