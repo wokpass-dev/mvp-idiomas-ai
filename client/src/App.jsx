@@ -6,6 +6,9 @@ import ChatInterface from './components/ChatInterface';
 import LandingPage from './components/LandingPage';
 
 import LanguageSelector from './components/LanguageSelector';
+import StudyPlan from './components/StudyPlan';
+import AdminDashboard from './components/AdminDashboard';
+
 
 function App() {
   const [session, setSession] = useState(null);
@@ -36,7 +39,9 @@ function App() {
         <Routes>
           <Route path="/login" element={!session ? <Login /> : <Navigate to="/languages" />} />
           <Route path="/languages" element={session ? <LanguageSelector /> : <Navigate to="/login" />} />
+          <Route path="/study" element={session ? <StudyPlan /> : <Navigate to="/login" />} />
           <Route path="/dashboard" element={session ? <ChatInterface session={session} /> : <Navigate to="/login" />} />
+          <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/" element={<LandingPage />} />
         </Routes>
       </div>

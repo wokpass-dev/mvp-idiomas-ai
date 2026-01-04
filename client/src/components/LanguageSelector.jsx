@@ -17,7 +17,7 @@ const LanguageSelector = () => {
     const handleSelect = (langId) => {
         // Save preference (mock for now, ideally to Supabase/Context)
         localStorage.setItem('targetLanguage', langId);
-        navigate('/dashboard');
+        navigate('/study');
     };
 
     return (
