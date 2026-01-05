@@ -8,21 +8,27 @@ const StudyPlan = () => {
     const targetLanguage = localStorage.getItem('targetLanguage') || 'es';
     const [curriculum, setCurriculum] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [expandedLevel, setExpandedLevel] = useState('a1'); // Default expand A1
 
     useEffect(() => {
-        // Fetch curriculum from server
-        // Use explicit URL or relative path if proxy is set up. For MVP explicit is safer.
-        const API_URL = import.meta.env.VITE_API_URL || 'https://mvp-idiomas-server.onrender.com/api';
+        // Hardcoded production URL to ensure stability for MVP
+        const API_URL = 'https://mvp-idiomas-server.onrender.com/api';
 
         fetch(`${API_URL}/scenarios`)
-            .then(res => res.json())
+            .then(res => {
+                if (!res.ok) throw new Error('Error al conectar con el servidor');
+                return res.json();
+            })
             .then(data => {
+                console.log('Datos recibidos:', data);
+                if (data.length === 0) setError('No se encontraron lecciones cargadas.');
                 setCurriculum(data);
                 setLoading(false);
             })
             .catch(err => {
                 console.error("Failed to load study plan", err);
+                setError(`Error de conexión: ${err.message}`);
                 setLoading(false);
             });
     }, []);
@@ -34,6 +40,14 @@ const StudyPlan = () => {
     const toggleLevel = (levelId) => {
         setExpandedLevel(expandedLevel === levelId ? null : levelId);
     };
+
+    if (error) return (
+        <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-red-400 p-6 text-center">
+            <span className="text-3xl mb-4">⚠️</span>
+            <p className="text-xl font-bold">{error}</p>
+            <p className="text-sm mt-2 text-slate-500">Por favor, recarga la página.</p>
+        </div>
+    );
 
     if (loading) return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Cargando tu plan personalizado...</div>;
 
