@@ -76,7 +76,11 @@ export default function ChatInterface({ session }) {
         try {
             const response = await sendAudio(audioBlob, selectedScenario?.id);
             const userMsg = { role: 'user', content: response.userText };
-            const aiMsg = { role: 'assistant', content: response.assistantText };
+            const aiMsg = {
+                role: 'assistant',
+                content: response.assistantText,
+                feedback: response.feedbackText // Store the correction separately
+            };
             setMessages(prev => [...prev, userMsg, aiMsg]);
             if (response.audioBase64) {
                 const audio = new Audio(`data:audio/mp3;base64,${response.audioBase64}`);
@@ -258,6 +262,21 @@ export default function ChatInterface({ session }) {
 
                                         <p className="text-sm md:text-base leading-relaxed relative z-10">{msg.content}</p>
                                     </div>
+
+                                    {/* Optimization #2: Selective Audio Feedback Display (Text Only = Free) */}
+                                    {msg.feedback && (
+                                        <div className="mt-2 ml-2 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-xl rounded-tl-none max-w-[90%] self-start animate-in fade-in slide-in-from-top-2">
+                                            <div className="flex gap-2 items-start">
+                                                <div className="bg-yellow-500/20 p-1 rounded-full shrink-0">
+                                                    <Crown size={12} className="text-yellow-400" />
+                                                </div>
+                                                <div>
+                                                    <span className="text-[10px] font-bold text-yellow-500 uppercase tracking-wider block mb-1">Feedback del Tutor</span>
+                                                    <p className="text-xs text-yellow-100/90 leading-relaxed">{msg.feedback}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </motion.div>
                         ))}
