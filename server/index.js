@@ -50,6 +50,13 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
+// Parsing middleware for Twilio (form-urlencoded)
+app.use(express.urlencoded({ extended: true }));
+
+// Routes
+const whatsappRouter = require('./whatsapp');
+app.use('/api/whatsapp', whatsappRouter);
+
 // Health Check
 app.get('/api/health', (req, res) => {
   res.json({
@@ -78,11 +85,22 @@ app.get('/api/scenarios', (req, res) => {
 });
 
 // Helper to get system prompt
+// Helper to get system prompt (Recursive Search)
 const getSystemMessage = (scenarioId) => {
-  const scenario = scenarios.find(s => s.id === scenarioId);
-  return scenario
-    ? { role: 'system', content: scenario.system_prompt }
-    : { role: 'system', content: 'You are a helpful language tutor.' }; // Default
+  for (const level of scenarios) {
+    if (level.modules) {
+      for (const module of level.modules) {
+        if (module.lessons) {
+          const lesson = module.lessons.find(l => l.id === scenarioId);
+          if (lesson) {
+            return { role: 'system', content: lesson.system_prompt };
+          }
+        }
+      }
+    }
+  }
+  // Fallback
+  return { role: 'system', content: 'You are a helpful language tutor (Default Context).' };
 };
 
 // Chat Endpoint
