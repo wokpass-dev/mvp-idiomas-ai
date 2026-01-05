@@ -58,6 +58,20 @@ const whatsappRouter = require('./whatsapp');
 app.use('/api/whatsapp', whatsappRouter);
 
 // Health Check
+app.get('/', (req, res) => {
+  res.json({
+    status: 'online',
+    server: 'mvp-idiomas-server',
+    checks: {
+      openai: !!process.env.OPENAI_API_KEY,
+      elevenlabs: !!process.env.ELEVENLABS_API_KEY,
+      supabase_url: !!process.env.SUPABASE_URL
+    },
+    timestamp: new Date().toISOString()
+  });
+});
+
+app.get('/health', (req, res) => res.send('OK'));
 app.get('/api/health', (req, res) => {
   res.json({
     status: 'ok',
