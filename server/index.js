@@ -59,6 +59,17 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// Admin Enpoints
+app.get('/api/admin/users', (req, res) => {
+  // Mock data for MVP - In production this would query Supabase Admin API
+  res.json([
+    { id: 'usr_123', email: 'gabriel@ejemplo.com', progress: 'Nivel A2 (En curso)', last_active: '2026-01-05' },
+    { id: 'usr_456', email: 'demo@idiomas.ai', progress: 'Nivel B1 (Completado)', last_active: '2026-01-04' },
+    { id: 'usr_789', email: 'test@cliente.com', progress: 'Nivel A1 (Inicio)', last_active: '2026-01-04' }
+  ]);
+});
+
+
 const scenarios = require('./scenarios');
 
 // Get Scenarios
