@@ -88,6 +88,18 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// DEBUG: Check if Env Vars are loaded correctly
+app.get('/api/debug-config', (req, res) => {
+  res.json({
+    has_openai: !!process.env.OPENAI_API_KEY,
+    has_supabase_url: !!process.env.SUPABASE_URL,
+    has_service_key: !!process.env.SUPABASE_SERVICE_ROLE_KEY,
+    has_anon_key: !!process.env.SUPABASE_ANON_KEY,
+    supabase_admin_ready: !!supabaseAdmin,
+    env_port: process.env.PORT
+  });
+});
+
 // Admin Enpoints
 app.get('/api/admin/users', (req, res) => {
   // Mock data for MVP - In production this would query Supabase Admin API
