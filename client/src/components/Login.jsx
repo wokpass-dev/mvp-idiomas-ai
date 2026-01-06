@@ -43,7 +43,7 @@ export default function Login() {
         <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
             <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-100">
                 <div className="flex justify-center mb-6">
-                    <img src="/logo.jpg" alt="Puentes Globales" className="h-64 w-auto object-contain" />
+                    <img src="/logo.jpg" alt="Puentes Globales" className="h-80 w-auto object-contain" />
                 </div>
                 <h1 className="text-3xl font-extrabold text-slate-900 mb-2 text-center">
                     {isSignUp ? 'Crear Cuenta' : 'Bienvenido'}

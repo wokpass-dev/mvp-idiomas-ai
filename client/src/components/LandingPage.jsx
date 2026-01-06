@@ -16,10 +16,10 @@ const LandingPage = () => {
 
             <div className="relative z-10">
                 {/* Navigation */}
-                <nav className="container mx-auto px-6 py-6 flex justify-between items-center">
+                <nav className="container mx-auto px-6 py-4 flex justify-between items-center">
                     <div className="flex items-center gap-2">
-                        {/* Logo Update - Bigger Size (3x) */}
-                        <img src="/logo.jpg" alt="Puentes Globales" className="h-72 w-auto object-contain" />
+                        {/* Logo Update - Massive Size (Custom) */}
+                        <img src="/logo.jpg" alt="Puentes Globales" className="h-96 w-auto object-contain" />
                     </div>
                     <button
                         onClick={() => navigate('/login')}
@@ -30,7 +30,7 @@ const LandingPage = () => {
                 </nav>
 
                 {/* Hero Section */}
-                <main className="container mx-auto px-6 pt-16 pb-32 text-center">
+                <main className="container mx-auto px-6 pt-8 pb-32 text-center">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
