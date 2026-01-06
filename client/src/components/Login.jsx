@@ -40,39 +40,44 @@ export default function Login() {
     };
 
     return (
-        <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-            <div className="bg-slate-800 p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-700">
+        <div className="min-h-screen bg-slate-50 flex items-center justify-center p-4">
+            <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-md border border-slate-100">
                 <div className="flex justify-center mb-6">
-                    <img src="/logo.jpg" alt="Puentes Globales" className="h-16 w-auto rounded-lg shadow-lg" />
+                    <img src="/logo.jpg" alt="Puentes Globales" className="h-20 w-auto object-contain" />
                 </div>
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent mb-6 text-center">
-                    {isSignUp ? 'Crear Cuenta' : 'Iniciar Sesión'}
+                <h1 className="text-3xl font-extrabold text-slate-900 mb-2 text-center">
+                    {isSignUp ? 'Crear Cuenta' : 'Bienvenido'}
                 </h1>
+                <p className="text-center text-slate-500 mb-8 text-sm">
+                    {isSignUp ? 'Empieza tu viaje hacia la fluidez' : 'Inicia sesión para continuar practicando'}
+                </p>
 
-                <form onSubmit={handleAuth} className="space-y-4">
+                <form onSubmit={handleAuth} className="space-y-5">
                     <div>
-                        <label className="block text-slate-400 text-sm mb-1">Email</label>
+                        <label className="block text-slate-700 text-sm font-bold mb-2">Email</label>
                         <input
                             type="email"
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full bg-white border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all shadow-sm"
+                            placeholder="tu@email.com"
                             required
                         />
                     </div>
                     <div>
-                        <label className="block text-slate-400 text-sm mb-1">Contraseña</label>
+                        <label className="block text-slate-700 text-sm font-bold mb-2">Contraseña</label>
                         <input
                             type="password"
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full bg-slate-900 border border-slate-700 rounded-xl p-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full bg-white border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all shadow-sm"
+                            placeholder="••••••••"
                             required
                         />
                     </div>
 
                     {message && (
-                        <div className={`text-sm p-3 rounded-lg ${message.includes('exitoso') ? 'bg-emerald-900/50 text-emerald-400' : 'bg-red-900/50 text-red-400'}`}>
+                        <div className={`text-sm p-3 rounded-lg ${message.includes('exitoso') ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' : 'bg-red-50 text-red-600 border border-red-100'}`}>
                             {message}
                         </div>
                     )}
@@ -80,19 +85,19 @@ export default function Login() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-xl transition-colors font-semibold flex justify-center items-center"
+                        className="w-full bg-cyan-600 hover:bg-cyan-700 text-white p-4 rounded-xl transition-all font-bold flex justify-center items-center shadow-lg shadow-cyan-600/20"
                     >
-                        {loading ? <Loader2 className="animate-spin" /> : (isSignUp ? 'Registrarse' : 'Entrar')}
+                        {loading ? <Loader2 className="animate-spin" /> : (isSignUp ? 'Registrarse Gratis' : 'Entrar')}
                     </button>
                 </form>
 
-                <div className="mt-6 text-center text-sm text-slate-400">
+                <div className="mt-8 text-center text-sm text-slate-500">
                     {isSignUp ? '¿Ya tienes cuenta?' : '¿No tienes cuenta?'}
                     <button
                         onClick={() => setIsSignUp(!isSignUp)}
-                        className="ml-2 text-blue-400 hover:underline"
+                        className="ml-2 text-cyan-600 font-bold hover:text-cyan-700 transition-colors"
                     >
-                        {isSignUp ? 'Ingresa aquí' : 'Regístrate'}
+                        {isSignUp ? 'Ingresa aquí' : 'Regístrate gratis'}
                     </button>
                 </div>
             </div>
