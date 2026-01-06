@@ -21,9 +21,9 @@ export const getScenarios = async () => {
     }
 };
 
-export const sendMessage = async (messages, scenarioId) => {
+export const sendMessage = async (messages, scenarioId, userId) => {
     try {
-        const response = await api.post('/chat', { messages, scenarioId });
+        const response = await api.post('/chat', { messages, scenarioId, userId });
         return response.data;
     } catch (error) {
         console.error('API Error (Chat):', error);

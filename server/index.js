@@ -44,6 +44,14 @@ app.use((req, res, next) => {
   next();
 });
 
+const { createClient } = require('@supabase/supabase-js');
+
+// Init Supabase Admin (Service Role)
+// Falls back to ANON key if SERVICE key matches (for dev), but needs SERVICE for best security
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
+const supabaseAdmin = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
+
 const OpenAI = require('openai');
 
 const openai = new OpenAI({
@@ -120,10 +128,41 @@ const getSystemMessage = (scenarioId) => {
 // Chat Endpoint
 app.post('/api/chat', async (req, res) => {
   try {
-    const { messages, scenarioId } = req.body;
+    const { messages, scenarioId, userId } = req.body;
 
     if (!messages || !Array.isArray(messages)) {
       return res.status(400).json({ error: 'Messages array is required' });
+    }
+
+    // SERVER-SIDE FREEMIUM CHECK 🔒
+    if (userId && supabaseAdmin) {
+      try {
+        // 1. Check Profile
+        const { data: profile, error } = await supabaseAdmin
+          .from('profiles')
+          .select('usage_count, is_premium')
+          .eq('id', userId)
+          .single();
+
+        if (profile) {
+          // 2. Enforce Limit (10 messages for Free Registered)
+          if (!profile.is_premium && profile.usage_count >= 10) {
+            return res.status(402).json({
+              error: 'Limit Reached',
+              message: 'Has alcanzado tu límite gratuito diario (10 mensajes). Suscríbete para continuar.'
+            });
+          }
+
+          // 3. Increment Usage (Fire and Forget)
+          supabaseAdmin.rpc('increment_usage', { user_id: userId }).then(({ error }) => {
+            if (error) console.error('Error Incrementing Usage:', error);
+          });
+        }
+      } catch (err) {
+        console.error('Freemium Check Error:', err);
+        // Fail open (allow chat if DB check fails) for UX? Or fail closed? 
+        // We'll log and proceed for MVP stability.
+      }
     }
 
     // Inject system prompt if it's the start or override

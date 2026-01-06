@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, FlatList, KeyboardAvoidingView, Platform, StatusBar, ActivityIndicator, Alert } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { getScenarios, sendMessage } from './services/api';
 import { supabase } from './services/supabase';
 import LoginScreen from './screens/LoginScreen';
@@ -50,23 +51,35 @@ export default function App() {
 function ChatInterface({ session, guestMode, onLogout }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(guestMode); // Start LOADING if guest (wait for storage)
+  const [guestMsgCount, setGuestMsgCount] = useState(0); // Track guest messages
 
   const [scenarios, setScenarios] = useState([]);
   const [selectedScenario, setSelectedScenario] = useState(null);
 
   const flatListRef = useRef();
 
-  // Load scenarios
+  // Load scenarios & guest count
   useEffect(() => {
+    // 1. Load Scenarios (Background)
     getScenarios().then(data => {
       setScenarios(data);
-      // Default to first scenario or generic
       if (data && data.length > 0) {
         handleScenarioSelect(data[0]);
       }
     });
-  }, []);
+
+    // 2. Load Guest Limit (Critical)
+    if (guestMode) {
+      AsyncStorage.getItem('guest_msg_count').then(val => {
+        if (val) setGuestMsgCount(parseInt(val, 10));
+        setLoading(false); // Unblock UI only after reading storage
+      }).catch(err => {
+        console.error("Storage Error:", err);
+        setLoading(false); // Unblock even if error
+      });
+    }
+  }, [guestMode]);
 
   const handleScenarioSelect = (scenario) => {
     setSelectedScenario(scenario);
@@ -79,6 +92,25 @@ function ChatInterface({ session, guestMode, onLogout }) {
   const handleSend = async () => {
     if (!input.trim() || loading) return;
 
+    // FREEMIUM CHECK: Guest Limit (5 messages)
+    if (guestMode) {
+      if (guestMsgCount >= 5) {
+        Alert.alert(
+          "¡Demo Finalizada! 🚀",
+          "Has alcanzado el límite de 5 mensajes gratis. Suscríbete para continuar practicando sin límites.",
+          [
+            { text: "Cancelar", style: "cancel" },
+            { text: "Contactar Ventas", onPress: () => alert("Redirigiendo a facturación...") }
+          ]
+        );
+        return;
+      }
+      // Increment and Persist
+      const newCount = guestMsgCount + 1;
+      setGuestMsgCount(newCount);
+      AsyncStorage.setItem('guest_msg_count', newCount.toString());
+    }
+
     const userMsg = { role: 'user', content: input };
     const newMessages = [...messages, userMsg];
 
@@ -87,7 +119,9 @@ function ChatInterface({ session, guestMode, onLogout }) {
     setLoading(true);
 
     try {
-      const response = await sendMessage(newMessages, selectedScenario?.id);
+      // Pass User ID for robust Server-Side Freemium Check
+      const userId = session?.user?.id;
+      const response = await sendMessage(newMessages, selectedScenario?.id, userId);
       setMessages(prev => [...prev, response]);
     } catch (error) {
       setMessages(prev => [...prev, { role: 'assistant', content: 'Error de conexión. Intenta de nuevo.' }]);
@@ -119,7 +153,7 @@ function ChatInterface({ session, guestMode, onLogout }) {
         <View>
           <Text style={styles.headerTitle}>Idiomas AI</Text>
           <Text style={styles.headerSubtitle}>
-            {guestMode ? 'Modo Invitado' : session?.user?.email}
+            {guestMode ? `Modo Invitado (${5 - guestMsgCount} restantes)` : session?.user?.email}
           </Text>
         </View>
         <TouchableOpacity onPress={handleLogout} style={styles.logoutButton}>
@@ -132,6 +166,7 @@ function ChatInterface({ session, guestMode, onLogout }) {
         scenarios={scenarios}
         selectedScenario={selectedScenario}
         onSelect={handleScenarioSelect}
+        guestMode={guestMode}
       />
 
       {/* CHAT LIST */}

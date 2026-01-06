@@ -1,23 +1,38 @@
 import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StyleSheet } from 'react-native';
 
-export default function ScenarioSelector({ scenarios, selectedScenario, onSelect }) {
+export default function ScenarioSelector({ scenarios, selectedScenario, onSelect, guestMode }) {
     return (
         <View style={styles.container}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
                 {scenarios.map((scenario) => {
                     const isSelected = selectedScenario?.id === scenario.id;
+                    const isLocked = guestMode && scenario.locked;
+
                     return (
                         <TouchableOpacity
                             key={scenario.id}
-                            onPress={() => onSelect(scenario)}
+                            onPress={() => {
+                                if (isLocked) {
+                                    alert("🔒 Contenido Premium. Suscríbete para acceder.");
+                                    return;
+                                }
+                                onSelect(scenario);
+                            }}
                             style={[
                                 styles.card,
-                                isSelected ? styles.selectedCard : styles.unselectedCard
+                                isSelected ? styles.selectedCard : styles.unselectedCard,
+                                isLocked && styles.lockedCard
                             ]}
                         >
-                            <Text style={styles.emoji}>{scenario.emoji}</Text>
-                            <Text style={[styles.title, isSelected ? styles.selectedText : styles.unselectedText]}>
+                            <Text style={styles.emoji}>
+                                {isLocked ? '🔒' : scenario.emoji}
+                            </Text>
+                            <Text style={[
+                                styles.title,
+                                isSelected ? styles.selectedText : styles.unselectedText,
+                                isLocked && styles.lockedText
+                            ]}>
                                 {scenario.title}
                             </Text>
                         </TouchableOpacity>
@@ -25,6 +40,10 @@ export default function ScenarioSelector({ scenarios, selectedScenario, onSelect
                 })}
             </ScrollView>
         </View>
+    );
+}
+            </ScrollView >
+        </View >
     );
 }
 
@@ -70,4 +89,12 @@ const styles = StyleSheet.create({
     unselectedText: {
         color: '#94a3b8',
     },
+    lockedCard: {
+        backgroundColor: '#0f172a',
+        borderColor: '#334155',
+        opacity: 0.5,
+    },
+    lockedText: {
+        color: '#64748b',
+    }
 });
