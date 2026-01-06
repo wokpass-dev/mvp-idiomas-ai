@@ -41,10 +41,10 @@ const LandingPage = () => {
                             <span>Nueva Tecnología AI de Voz</span>
                         </div>
 
-                        <h1 className="text-5xl md:text-7xl font-extrabold mb-8 tracking-tight text-slate-900">
-                            Habla inglés <br />
+                        <h1 className="text-5xl md:text-7xl font-extrabold mb-8 tracking-tight text-slate-900 uppercase">
+                            HABLA EN INGLÉS <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-500 to-slate-600">
-                                sin miedo
+                                SIN MIEDO
                             </span>
                         </h1>
 
