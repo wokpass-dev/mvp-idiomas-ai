@@ -18,8 +18,8 @@ const LandingPage = () => {
                 {/* Navigation */}
                 <nav className="container mx-auto px-6 py-6 flex justify-between items-center">
                     <div className="flex items-center gap-2">
-                        {/* Logo Update - Bigger Size */}
-                        <img src="/logo.jpg" alt="Puentes Globales" className="h-24 w-auto object-contain" />
+                        {/* Logo Update - Bigger Size (3x) */}
+                        <img src="/logo.jpg" alt="Puentes Globales" className="h-72 w-auto object-contain" />
                     </div>
                     <button
                         onClick={() => navigate('/login')}
