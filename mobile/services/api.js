@@ -1,7 +1,8 @@
 import axios from 'axios';
 
-// Mobile App always connects to Production for MVP (Simpler than handling Local Network IPs)
+// Mobile App always connects to Production for MVP
 const BASE_URL = 'https://mvp-idiomas-server.onrender.com/api';
+// const BASE_URL = 'http://192.168.0.6:3000/api'; // Local Debug
 
 const api = axios.create({
     baseURL: BASE_URL,
