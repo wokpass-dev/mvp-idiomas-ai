@@ -105,14 +105,27 @@ export default function ChatInterface({ session }) {
         setLoading(true);
 
         try {
-            const response = await sendMessage(newMessages, selectedScenario?.id);
+            // Updated to send User ID for Server-Side Freemium Check
+            const userId = session?.user?.id;
+            const response = await sendMessage(newMessages, selectedScenario?.id, userId);
             setMessages(prev => [...prev, response]);
         } catch (error) {
             console.error('Failed to send message:', error);
-            const errorMsg = error.response ?
-                `Server Error: ${error.response.status} - ${JSON.stringify(error.response.data)}` :
-                `Connection Error: ${error.message}`;
-            setMessages(prev => [...prev, { role: 'assistant', content: errorMsg }]);
+
+            // Check for Freemium Limit (402)
+            if (error.response && error.response.status === 402) {
+                window.alert("¡Límite Diario Alcanzado! 🛑\nHas usado tus 10 mensajes gratuitos de hoy. Suscríbete para acceso ilimitado.");
+                // Or better UI:
+                setMessages(prev => [...prev, {
+                    role: 'assistant',
+                    content: '🛑 Has alcanzado tu límite gratuito diario (10 mensajes). Por favor suscríbete para continuar.'
+                }]);
+            } else {
+                const errorMsg = error.response ?
+                    `Server Error: ${error.response.status} - ${JSON.stringify(error.response.data)}` :
+                    `Connection Error: ${error.message}`;
+                setMessages(prev => [...prev, { role: 'assistant', content: errorMsg }]);
+            }
         } finally {
             setLoading(false);
         }

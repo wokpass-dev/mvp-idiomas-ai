@@ -23,8 +23,8 @@ export const getScenarios = async () => {
     return response.data;
 };
 
-export const sendMessage = async (messages, scenarioId) => {
-    const response = await api.post('/chat', { messages, scenarioId });
+export const sendMessage = async (messages, scenarioId, userId) => {
+    const response = await api.post('/chat', { messages, scenarioId, userId });
     return response.data;
 };
 
