@@ -18,12 +18,8 @@ const LandingPage = () => {
                 {/* Navigation */}
                 <nav className="container mx-auto px-6 py-6 flex justify-between items-center">
                     <div className="flex items-center gap-2">
-                        <div className="w-8 h-8 bg-gradient-to-tr from-blue-500 to-purple-500 rounded-lg flex items-center justify-center">
-                            <MessageCircle size={20} className="text-white" />
-                        </div>
-                        <span className="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
-                            Puentes Globales
-                        </span>
+                        {/* Logo Update */}
+                        <img src="/logo.jpg" alt="Puentes Globales" className="h-12 w-auto rounded-lg" />
                     </div>
                     <button
                         onClick={() => navigate('/login')}
@@ -46,15 +42,16 @@ const LandingPage = () => {
                         </div>
 
                         <h1 className="text-5xl md:text-7xl font-bold mb-8 tracking-tight">
-                            Habla Inglés con <br />
+                            Habla inglés <br />
                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-purple-400">
-                                Confianza Total
+                                sin miedo
                             </span>
                         </h1>
 
                         <p className="text-xl text-slate-400 max-w-2xl mx-auto mb-12 leading-relaxed">
-                            Tu tutor personal de IA disponible 24/7. Practica situaciones reales,
-                            recibe feedback instantáneo y pierde el miedo a hablar.
+                            Entrena tu inglés con IA en situaciones reales.
+                            Corrige errores al instante, gana seguridad
+                            y empieza a expresarte con confianza.
                         </p>
 
                         <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
@@ -62,7 +59,7 @@ const LandingPage = () => {
                                 onClick={() => navigate('/login')}
                                 className="group relative px-8 py-4 bg-blue-600 hover:bg-blue-500 rounded-full font-semibold text-lg transition-all flex items-center gap-2 shadow-lg shadow-blue-600/25"
                             >
-                                Comenzar Gratis
+                                Probar ahora
                                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                             </button>
                             <button className="px-8 py-4 bg-slate-800 hover:bg-slate-700 rounded-full font-semibold text-lg transition-all text-slate-300">

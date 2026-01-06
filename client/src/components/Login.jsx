@@ -42,6 +42,9 @@ export default function Login() {
     return (
         <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
             <div className="bg-slate-800 p-8 rounded-2xl shadow-xl w-full max-w-md border border-slate-700">
+                <div className="flex justify-center mb-6">
+                    <img src="/logo.jpg" alt="Puentes Globales" className="h-16 w-auto rounded-lg shadow-lg" />
+                </div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-emerald-400 bg-clip-text text-transparent mb-6 text-center">
                     {isSignUp ? 'Crear Cuenta' : 'Iniciar Sesión'}
                 </h1>
