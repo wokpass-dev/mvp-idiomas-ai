@@ -156,6 +156,10 @@ app.post('/api/chat', async (req, res) => {
 
           if (createError) {
             console.error('Error creating profile:', createError);
+            // Constraint violation meant user doesn't exist in auth.users
+            if (createError.code === '23503') { // Foreign Key Violation
+              return res.status(401).json({ error: 'Unauthorized', message: 'User invalid. Please re-login.' });
+            }
           } else {
             profile = newProfile;
           }
@@ -177,6 +181,10 @@ app.post('/api/chat', async (req, res) => {
           supabaseAdmin.rpc('increment_usage', { user_id: userId }).then(({ error }) => {
             if (error) console.error('Error Incrementing Usage:', error);
           });
+        } else {
+          // FAIL CLOSED: If we couldn't get/create a profile, block.
+          console.log('🛑 No profile found or created. Blocking.');
+          return res.status(401).json({ error: 'Unauthorized', message: 'Session invalid. Please re-login.' });
         }
       } catch (err) {
         console.error('Freemium Check Error:', err);
