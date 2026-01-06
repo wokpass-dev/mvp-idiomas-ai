@@ -124,7 +124,15 @@ function ChatInterface({ session, guestMode, onLogout }) {
       const response = await sendMessage(newMessages, selectedScenario?.id, userId);
       setMessages(prev => [...prev, response]);
     } catch (error) {
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Error de conexión. Intenta de nuevo.' }]);
+      if (error.response && error.response.status === 402) {
+        Alert.alert(
+          "¡Límite Diario Alcanzado! 🛑",
+          "Has usado tus 10 mensajes gratuitos de hoy. Suscríbete para acceso ilimitado.",
+          [{ text: "Entendido" }]
+        );
+      } else {
+        setMessages(prev => [...prev, { role: 'assistant', content: 'Error de conexión. Intenta de nuevo.' }]);
+      }
     } finally {
       setLoading(false);
     }

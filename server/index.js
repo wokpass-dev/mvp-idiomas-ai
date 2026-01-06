@@ -136,17 +136,37 @@ app.post('/api/chat', async (req, res) => {
 
     // SERVER-SIDE FREEMIUM CHECK 🔒
     if (userId && supabaseAdmin) {
+      console.log(`🔒 Checking Freemium for User: ${userId}`);
       try {
         // 1. Check Profile
-        const { data: profile, error } = await supabaseAdmin
+        let { data: profile, error } = await supabaseAdmin
           .from('profiles')
           .select('usage_count, is_premium')
           .eq('id', userId)
           .single();
 
+        // SELF-HEALING: If no profile exists (old user), create one
+        if (!profile && (!error || error.code === 'PGRST116')) {
+          console.log('⚠️ Profile missing. Creating default profile...');
+          const { data: newProfile, error: createError } = await supabaseAdmin
+            .from('profiles')
+            .insert([{ id: userId, usage_count: 0, is_premium: false }])
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('Error creating profile:', createError);
+          } else {
+            profile = newProfile;
+          }
+        }
+
         if (profile) {
+          console.log(`📊 Usage: ${profile.usage_count}/10 | Premium: ${profile.is_premium}`);
+
           // 2. Enforce Limit (10 messages for Free Registered)
           if (!profile.is_premium && profile.usage_count >= 10) {
+            console.log('🛑 Limit Reached. Blocking.');
             return res.status(402).json({
               error: 'Limit Reached',
               message: 'Has alcanzado tu límite gratuito diario (10 mensajes). Suscríbete para continuar.'
@@ -160,9 +180,9 @@ app.post('/api/chat', async (req, res) => {
         }
       } catch (err) {
         console.error('Freemium Check Error:', err);
-        // Fail open (allow chat if DB check fails) for UX? Or fail closed? 
-        // We'll log and proceed for MVP stability.
       }
+    } else {
+      console.log('⚠️ Skipping Freemium Check (No UserId or Admin Key)');
     }
 
     // Inject system prompt if it's the start or override
