@@ -151,20 +151,23 @@ app.post('/api/chat', async (req, res) => {
       console.log(`🔒 Checking Freemium for User: ${userId}`);
       try {
         // 1. Check Profile
-        let { data: profile, error } = await supabaseAdmin
+        let { data: profile, error: selectError } = await supabaseAdmin
           .from('profiles')
           .select('usage_count, is_premium')
           .eq('id', userId)
           .single();
 
         // SELF-HEALING: If no profile exists (old user), create one
-        if (!profile && (!error || error.code === 'PGRST116')) {
+        let interactionError = null;
+        if (!profile && (!selectError || selectError.code === 'PGRST116')) {
           console.log('⚠️ Profile missing. Creating default profile...');
           const { data: newProfile, error: createError } = await supabaseAdmin
             .from('profiles')
             .insert([{ id: userId, usage_count: 0, is_premium: false }])
             .select()
             .single();
+
+          interactionError = createError;
 
           if (createError) {
             console.error('Error creating profile:', createError);
@@ -203,7 +206,9 @@ app.post('/api/chat', async (req, res) => {
           return res.status(401).json({
             error: 'Unauthorized',
             message: 'Debug: Session invalid (Profile Missing). Please re-login.',
-            userId_received: userId
+            userId_received: userId,
+            debug_select: selectError,
+            debug_insert: interactionError
           });
         }
       } catch (err) {
