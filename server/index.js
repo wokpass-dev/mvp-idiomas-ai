@@ -170,7 +170,11 @@ app.post('/api/chat', async (req, res) => {
             console.error('Error creating profile:', createError);
             // Constraint violation meant user doesn't exist in auth.users
             if (createError.code === '23503') { // Foreign Key Violation
-              return res.status(401).json({ error: 'Unauthorized', message: 'User invalid. Please re-login.' });
+              return res.status(401).json({
+                error: 'Unauthorized',
+                message: 'Debug: User invalid (FK Violation). Please re-login.',
+                debug_fk: createError
+              });
             }
           } else {
             profile = newProfile;
@@ -196,7 +200,11 @@ app.post('/api/chat', async (req, res) => {
         } else {
           // FAIL CLOSED: If we couldn't get/create a profile, block.
           console.log('🛑 No profile found or created. Blocking.');
-          return res.status(401).json({ error: 'Unauthorized', message: 'Session invalid. Please re-login.' });
+          return res.status(401).json({
+            error: 'Unauthorized',
+            message: 'Debug: Session invalid (Profile Missing). Please re-login.',
+            userId_received: userId
+          });
         }
       } catch (err) {
         console.error('Freemium Check Error:', err);
