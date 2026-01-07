@@ -187,12 +187,13 @@ app.post('/api/chat', async (req, res) => {
         if (profile) {
           console.log(`📊 Usage: ${profile.usage_count}/10 | Premium: ${profile.is_premium}`);
 
-          // 2. Enforce Limit (10 messages for Free Registered)
-          if (!profile.is_premium && profile.usage_count >= 10) {
+          // 2. Enforce Limit (2 messages for Testing)
+          const DAILY_LIMIT = 2;
+          if (!profile.is_premium && profile.usage_count >= DAILY_LIMIT) {
             console.log('🛑 Limit Reached. Blocking.');
             return res.status(402).json({
               error: 'Limit Reached',
-              message: 'Has alcanzado tu límite gratuito diario (10 mensajes). Suscríbete para continuar.'
+              message: `Has alcanzado tu límite de prueba (${DAILY_LIMIT} mensajes). Suscríbete para continuar.`
             });
           }
 
@@ -203,13 +204,7 @@ app.post('/api/chat', async (req, res) => {
         } else {
           // FAIL CLOSED: If we couldn't get/create a profile, block.
           console.log('🛑 No profile found or created. Blocking.');
-          return res.status(401).json({
-            error: 'Unauthorized',
-            message: 'Debug: Session invalid (Profile Missing). Please re-login.',
-            userId_received: userId,
-            debug_select: selectError,
-            debug_insert: interactionError
-          });
+          return res.status(401).json({ error: 'Unauthorized', message: 'Session invalid. Please re-login.' });
         }
       } catch (err) {
         console.error('Freemium Check Error:', err);

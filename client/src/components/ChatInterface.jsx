@@ -113,12 +113,13 @@ export default function ChatInterface({ session }) {
             console.error('Failed to send message:', error);
 
             // Check for Freemium Limit (402)
+            // Check for Freemium Limit (402)
             if (error.response && error.response.status === 402) {
-                window.alert("¡Límite Diario Alcanzado! 🛑\nHas usado tus 10 mensajes gratuitos de hoy. Suscríbete para acceso ilimitado.");
-                // Or better UI:
+                // Open Pricing Modal + Show Message
+                setIsPricingOpen(true);
                 setMessages(prev => [...prev, {
                     role: 'assistant',
-                    content: '🛑 Has alcanzado tu límite gratuito diario (10 mensajes). Por favor suscríbete para continuar.'
+                    content: '🛑 Has alcanzado tu límite gratuito. ¡Dale click a la corona 👑 para actualizar tu plan!'
                 }]);
             } else {
                 const errorMsg = error.response ?
