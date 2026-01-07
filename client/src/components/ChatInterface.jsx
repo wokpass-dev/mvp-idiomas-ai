@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { sendMessage, sendAudio, getScenarios } from '../services/api';
 import { supabase } from '../supabaseClient';
-import { Send, User, Bot, Loader2, CheckCircle, MessageSquare, Crown } from 'lucide-react';
+import { Send, User, Bot, Loader2, CheckCircle, MessageSquare, Crown, LogOut } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AudioRecorder from './AudioRecorder';
 import FeedbackModal from './FeedbackModal';
@@ -208,7 +208,15 @@ export default function ChatInterface({ session }) {
                             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-500 to-indigo-500 flex items-center justify-center text-xs font-bold text-white">
                                 {session?.user?.email?.[0].toUpperCase() || 'U'}
                             </div>
-                            <span className="truncate max-w-[120px]">{session?.user?.email?.split('@')[0]}</span>
+                            <div className="flex flex-col overflow-hidden">
+                                <span className="truncate max-w-[100px] font-medium text-white">{session?.user?.email?.split('@')[0]}</span>
+                                <button
+                                    onClick={async () => { await supabase.auth.signOut(); }}
+                                    className="text-[10px] text-red-400 hover:text-red-300 flex items-center gap-1 mt-0.5 text-left"
+                                >
+                                    <LogOut size={10} /> Cerrar Sesión
+                                </button>
+                            </div>
                         </div>
                         <button
                             onClick={() => setIsPricingOpen(true)}
