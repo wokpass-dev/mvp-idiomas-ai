@@ -74,7 +74,8 @@ export default function ChatInterface({ session }) {
     const handleAudioCapture = async (audioBlob) => {
         setLoading(true);
         try {
-            const response = await sendAudio(audioBlob, selectedScenario?.id);
+            const userId = session?.user?.id;
+            const response = await sendAudio(audioBlob, selectedScenario?.id, userId);
             const userMsg = { role: 'user', content: response.userText };
             const aiMsg = {
                 role: 'assistant',

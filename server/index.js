@@ -137,6 +137,107 @@ const getSystemMessage = (scenarioId) => {
   return { role: 'system', content: 'You are a helpful language tutor (Default Context).' };
 };
 
+const { getPlanConfig } = require('./services/profileRules'); // Import Rule Engine
+
+// Helper: Freemium Usage Check
+const checkUsage = async (userId) => {
+  if (!userId || !supabaseAdmin) return { allowed: true }; // Skip if no user or no db connection
+
+  try {
+    // 1. Check Profile
+    let { data: profile, error: selectError } = await supabaseAdmin
+      .from('profiles')
+      .select('usage_count, is_premium')
+      .eq('id', userId)
+      .single();
+
+    // SELF-HEALING: If no profile exists (old user), create one
+    if (!profile && (!selectError || selectError.code === 'PGRST116')) {
+      console.log('⚠️ Profile missing. Creating default profile...');
+      const { data: newProfile, error: createError } = await supabaseAdmin
+        .from('profiles')
+        .insert([{ id: userId, usage_count: 0, is_premium: false }])
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Error creating profile:', createError);
+        return { allowed: false, error: 'User profile error' };
+      }
+      profile = newProfile;
+    }
+
+    if (profile) {
+      // Get Plan Config to determine limits
+      const planConfig = getPlanConfig(profile);
+      const DAILY_LIMIT = planConfig.limits.dailyMessages || 5;
+
+      console.log(`📊 Usage: ${profile.usage_count}/${DAILY_LIMIT} | Premium: ${profile.is_premium} | Plan: ${planConfig.planId}`);
+
+      // 2. Enforce Limit
+      if (!profile.is_premium && profile.usage_count >= DAILY_LIMIT) {
+        console.log('🛑 Limit Reached. Blocking.');
+        return {
+          allowed: false,
+          status: 402,
+          message: `Has alcanzado tu límite diario de ${DAILY_LIMIT} mensajes. Actualiza tu plan para continuar.`
+        };
+      }
+
+      // 3. Increment Usage (Fire and Forget)
+      supabaseAdmin.rpc('increment_usage', { user_id: userId }).then(({ error }) => {
+        if (error) console.error('Error Incrementing Usage:', error);
+      });
+
+      return { allowed: true };
+    }
+  } catch (err) {
+    console.error('Freemium Check Error:', err);
+    return { allowed: true }; // Fail open on DB error to avoid outage
+  }
+  return { allowed: true };
+};
+
+// --- PROFILE ENDPOINTS ---
+app.post('/api/profile', async (req, res) => {
+  const { userId, goal, level, interests, age } = req.body;
+  if (!supabaseAdmin) return res.status(500).json({ error: 'DB not connected' });
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('profiles')
+      .upsert({
+        id: userId,
+        goal,
+        level,
+        interests,
+        age,
+        onboarding_completed: true
+      });
+
+    if (error) throw error;
+    res.json({ success: true, message: 'Profile saved' });
+  } catch (err) {
+    console.error('Profile Save Error:', err);
+    res.status(500).json({ error: 'Failed to save profile' });
+  }
+});
+
+app.get('/api/profile/:userId', async (req, res) => {
+  const { userId } = req.params;
+  if (!supabaseAdmin) return res.status(500).json({ error: 'DB not connected' });
+
+  const { data, error } = await supabaseAdmin
+    .from('profiles')
+    .select('*')
+    .eq('id', userId)
+    .single();
+
+  if (error) return res.status(404).json({ error: 'Not found' });
+  res.json(data);
+});
+// -------------------------
+
 // Chat Endpoint
 app.post('/api/chat', async (req, res) => {
   try {
@@ -147,78 +248,41 @@ app.post('/api/chat', async (req, res) => {
     }
 
     // SERVER-SIDE FREEMIUM CHECK 🔒
-    if (userId && supabaseAdmin) {
-      console.log(`🔒 Checking Freemium for User: ${userId}`);
-      try {
-        // 1. Check Profile
-        let { data: profile, error: selectError } = await supabaseAdmin
-          .from('profiles')
-          .select('usage_count, is_premium')
-          .eq('id', userId)
-          .single();
-
-        // SELF-HEALING: If no profile exists (old user), create one
-        let interactionError = null;
-        if (!profile && (!selectError || selectError.code === 'PGRST116')) {
-          console.log('⚠️ Profile missing. Creating default profile...');
-          const { data: newProfile, error: createError } = await supabaseAdmin
-            .from('profiles')
-            .insert([{ id: userId, usage_count: 0, is_premium: false }])
-            .select()
-            .single();
-
-          interactionError = createError;
-
-          if (createError) {
-            console.error('Error creating profile:', createError);
-            // Constraint violation meant user doesn't exist in auth.users
-            if (createError.code === '23503') { // Foreign Key Violation
-              return res.status(401).json({
-                error: 'Unauthorized',
-                message: 'Debug: User invalid (FK Violation). Please re-login.',
-                debug_fk: createError
-              });
-            }
-          } else {
-            profile = newProfile;
-          }
-        }
-
-        if (profile) {
-          console.log(`📊 Usage: ${profile.usage_count}/10 | Premium: ${profile.is_premium}`);
-
-          // 2. Enforce Limit (2 messages for Testing)
-          const DAILY_LIMIT = 2;
-          if (!profile.is_premium && profile.usage_count >= DAILY_LIMIT) {
-            console.log('🛑 Limit Reached. Blocking.');
-            return res.status(402).json({
-              error: 'Limit Reached',
-              message: `Has alcanzado tu límite de prueba (${DAILY_LIMIT} mensajes). Suscríbete para continuar.`
-            });
-          }
-
-          // 3. Increment Usage (Fire and Forget)
-          supabaseAdmin.rpc('increment_usage', { user_id: userId }).then(({ error }) => {
-            if (error) console.error('Error Incrementing Usage:', error);
-          });
-        } else {
-          // FAIL CLOSED: If we couldn't get/create a profile, block.
-          console.log('🛑 No profile found or created. Blocking.');
-          return res.status(401).json({ error: 'Unauthorized', message: 'Session invalid. Please re-login.' });
-        }
-      } catch (err) {
-        console.error('Freemium Check Error:', err);
-      }
-    } else {
-      console.log('⚠️ Skipping Freemium Check (No UserId or Admin Key)');
+    // SERVER-SIDE FREEMIUM CHECK 🔒
+    const usageCheck = await checkUsage(userId);
+    if (!usageCheck.allowed) {
+      return res.status(usageCheck.status || 402).json({
+        error: 'Limit Reached',
+        message: usageCheck.message || 'Has alcanzado tu límite.'
+      });
     }
 
-    // Inject system prompt if it's the start or override
-    // Simple strategy: Always prepend system prompt appropriate for the scenario
-    // We filter out any existing system messages from client to avoid duplication if we want strict control
-    const userMessages = messages.filter(m => m.role !== 'system');
-    const systemMsg = getSystemMessage(scenarioId);
+    // --- DYNAMIC PROFILE PROMPT INJECTION ---
+    let systemMsg = { role: 'system', content: 'You are a helpful tutor.' };
 
+    if (userId && supabaseAdmin) {
+      // Fetch Profile for personalization
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('*') // Get all fields including goal, interests etc.
+        .eq('id', userId)
+        .single();
+
+      if (profile && profile.goal) {
+        // Use RULE ENGINE if profile has data
+        const planConfig = getPlanConfig(profile);
+        systemMsg = planConfig.systemPrompt;
+        console.log(`🧠 Rule Engine for ${userId}: Plan=${planConfig.planId}`);
+      } else {
+        // Fallback to Scenario-based or Default
+        systemMsg = getSystemMessage(scenarioId);
+      }
+    } else {
+      systemMsg = getSystemMessage(scenarioId);
+    }
+    // ----------------------------------------
+
+    const userMessages = messages.filter(m => m.role !== 'system');
     const finalMessages = [systemMsg, ...userMessages];
 
     const completion = await openai.chat.completions.create({
@@ -246,6 +310,16 @@ app.post('/api/speak', upload.single('audio'), async (req, res) => {
   }
 
   try {
+    const userId = req.body.userId; // Extract userId specifically for freemium
+    // SERVER-SIDE FREEMIUM CHECK 🔒
+    const usageCheck = await checkUsage(userId);
+    if (!usageCheck.allowed) {
+      if (req.file && req.file.path) cleanup(req.file.path); // Cleanup upload before returning
+      return res.status(usageCheck.status || 402).json({
+        error: 'Limit Reached',
+        message: usageCheck.message || 'Has alcanzado tu límite.'
+      });
+    }
     // 1. STT: Send to OpenAI Whisper
     const formData = new FormData();
     formData.append('file', fs.createReadStream(audioFile.path));
@@ -266,7 +340,26 @@ app.post('/api/speak', upload.single('audio'), async (req, res) => {
 
     // 2. Chat: Send text to GPT (Request structured JSON)
     const scenarioId = req.body.scenarioId;
-    const systemMsg = getSystemMessage(scenarioId);
+    let systemMsg = { role: 'system', content: 'You are a helpful tutor.' };
+
+    // --- DYNAMIC PROFILE PROMPT INJECTION (Voice) ---
+    if (userId && supabaseAdmin) {
+      // Fetch Profile for personalization
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      if (profile && profile.goal) {
+        const planConfig = getPlanConfig(profile);
+        systemMsg = planConfig.systemPrompt;
+      } else {
+        systemMsg = getSystemMessage(scenarioId);
+      }
+    } else {
+      systemMsg = getSystemMessage(scenarioId);
+    }
+    // ------------------------------------------------
 
     // Modify system prompt to ensure JSON output
     const jsonSystemMsg = {

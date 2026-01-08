@@ -2,6 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Globe, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../supabaseClient';
+import api from '../services/api';
 
 const languages = [
     { id: 'en', name: 'English', flag: '🇬🇧', description: 'Master global communication' },
@@ -69,6 +71,20 @@ const LanguageSelector = () => {
                     </motion.button>
                 ))}
             </div>
+
+            {/* Debug Button */}
+            <button
+                onClick={async () => {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    if (user) {
+                        await api.post('/profile', { userId: user.id, onboarding_completed: false });
+                        window.location.reload();
+                    }
+                }}
+                className="mt-8 text-xs text-red-500 hover:text-red-400 underline z-50 cursor-pointer"
+            >
+                [DEBUG] Reset Onboarding & Reload
+            </button>
         </div>
     );
 };

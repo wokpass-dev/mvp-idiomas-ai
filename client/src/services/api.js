@@ -28,11 +28,14 @@ export const sendMessage = async (messages, scenarioId, userId) => {
     return response.data;
 };
 
-export const sendAudio = async (audioBlob, scenarioId) => {
+export const sendAudio = async (audioBlob, scenarioId, userId) => {
     const formData = new FormData();
     formData.append('audio', audioBlob, 'input.webm');
     if (scenarioId) {
         formData.append('scenarioId', scenarioId);
+    }
+    if (userId) {
+        formData.append('userId', userId);
     }
 
     // axios handles multipart/form-data boundary automatically if we pass FormData
