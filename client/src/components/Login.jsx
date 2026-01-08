@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { supabase } from '../supabaseClient';
 import { useNavigate } from 'react-router-dom';
+import api from '../services/api';
 import { Loader2 } from 'lucide-react';
 
 export default function Login() {
     const [loading, setLoading] = useState(false);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState(''); // Simple password login for MVP
+    const [accessCode, setAccessCode] = useState('');
     const [isSignUp, setIsSignUp] = useState(false);
     const [message, setMessage] = useState('');
     const navigate = useNavigate();
@@ -18,6 +20,13 @@ export default function Login() {
 
         try {
             if (isSignUp) {
+                // 1. Verify Access Code First
+                const codeCheck = await api.post('/verify-code', { code: accessCode });
+                if (!codeCheck.data.valid) {
+                    throw new Error('Código de acceso inválido. Solicítalo a tu profesor.');
+                }
+
+                // 2. Proceed with Signup
                 const { error } = await supabase.auth.signUp({
                     email,
                     password,
@@ -64,6 +73,20 @@ export default function Login() {
                             required
                         />
                     </div>
+
+                    {isSignUp && (
+                        <div>
+                            <label className="block text-slate-700 text-sm font-bold mb-2">Código de Alumno (Requerido)</label>
+                            <input
+                                type="text"
+                                value={accessCode}
+                                onChange={(e) => setAccessCode(e.target.value)}
+                                className="w-full bg-white border border-slate-200 rounded-xl p-3 text-slate-900 focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:border-transparent transition-all shadow-sm"
+                                placeholder="Ingresa tu código de 6 dígitos"
+                                required
+                            />
+                        </div>
+                    )}
                     <div>
                         <label className="block text-slate-700 text-sm font-bold mb-2">Contraseña</label>
                         <input

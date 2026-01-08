@@ -236,6 +236,17 @@ app.get('/api/profile/:userId', async (req, res) => {
   if (error) return res.status(404).json({ error: 'Not found' });
   res.json(data);
 });
+app.post('/api/verify-code', (req, res) => {
+  const { code } = req.body;
+  const validCodes = (process.env.STUDENT_ACCESS_CODES || '').split(',');
+
+  if (validCodes.includes(code)) {
+    res.json({ valid: true });
+  } else {
+    res.json({ valid: false });
+  }
+});
+
 // -------------------------
 
 // Chat Endpoint

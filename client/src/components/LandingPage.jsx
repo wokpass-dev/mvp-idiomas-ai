@@ -25,7 +25,7 @@ const LandingPage = () => {
                         onClick={() => navigate('/login')}
                         className="px-8 py-2.5 bg-slate-900 hover:bg-slate-800 text-white rounded-full transition-all text-sm font-semibold shadow-lg shadow-slate-900/10"
                     >
-                        Iniciar Sesión
+                        Soy Alumno
                     </button>
                 </nav>
 
@@ -54,16 +54,22 @@ const LandingPage = () => {
                             y empieza a expresarte con confianza.
                         </p>
 
-                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center items-center mt-8">
+                            {/* Student Path */}
                             <button
                                 onClick={() => navigate('/login')}
-                                className="group relative px-8 py-4 bg-cyan-600 hover:bg-cyan-500 text-white rounded-full font-bold text-lg transition-all flex items-center gap-2 shadow-xl shadow-cyan-600/30 ring-4 ring-cyan-100"
+                                className="px-8 py-4 bg-white hover:bg-slate-50 border-2 border-slate-200 text-slate-700 rounded-full font-bold text-lg transition-all shadow-sm hover:shadow-md flex items-center gap-2"
                             >
-                                Probar ahora
-                                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+                                🎓 Soy Alumno
                             </button>
-                            <button className="px-8 py-4 bg-white hover:bg-slate-50 border-2 border-slate-100 rounded-full font-bold text-lg transition-all text-slate-600 shadow-sm hover:shadow-md">
-                                Ver Demo
+
+                            {/* External Path */}
+                            <button
+                                onClick={() => alert("Próximamente: Integración con Google & Stripe (Trial 15 Días)")}
+                                className="group relative px-8 py-4 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-full font-bold text-lg transition-all flex items-center gap-2 shadow-xl shadow-cyan-500/30 ring-4 ring-cyan-100"
+                            >
+                                Prueba Gratis 15 Días
+                                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
                             </button>
                         </div>
                     </motion.div>
