@@ -313,6 +313,38 @@ app.post('/api/chat', async (req, res) => {
 });
 
 
+// --- TRANSLATOR ENDPOINT (MOBILE) ---
+const { processTranslation } = require('./services/translator');
+
+app.post('/api/translate', upload.single('audio'), async (req, res) => {
+  const audioFile = req.file;
+  const { userId, fromLang, toLang } = req.body;
+
+  if (!audioFile) return res.status(400).json({ error: 'No audio provided' });
+
+  try {
+    // Optional: Check Usage Limits here if you want to charge for translations
+    // const usageCheck = await checkUsage(userId);
+    // if (!usageCheck.allowed) ...
+
+    const result = await processTranslation({
+      audioPath: audioFile.path,
+      fromLang: fromLang || 'es',
+      toLang: toLang || 'en',
+      userId
+    });
+
+    res.json(result);
+
+  } catch (error) {
+    console.error('Translation Endpoint Error:', error);
+    res.status(500).json({ error: 'Translation failed' });
+  } finally {
+    // Always cleanup uploaded file
+    cleanup(audioFile.path);
+  }
+});
+
 // Speak Endpoint
 app.post('/api/speak', upload.single('audio'), async (req, res) => {
   const audioFile = req.file;
