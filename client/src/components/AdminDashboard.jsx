@@ -9,14 +9,17 @@ import {
     Activity,
     Save,
     Plus,
-    Lock
+    Lock,
+    Zap,
+    TrendingDown
 } from 'lucide-react';
+import api from '../services/api'; // Use centralized API service
 
 const AdminDashboard = () => {
     const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
-    const [activeTab, setActiveTab] = useState('billing');
+    const [activeTab, setActiveTab] = useState('expenses'); // Default to expenses for visibility
 
     const handleLogin = (e) => {
         e.preventDefault();
@@ -69,6 +72,12 @@ const AdminDashboard = () => {
 
                 <nav className="space-y-2 flex-1">
                     <SidebarItem
+                        icon={<Activity />}
+                        label="Costos & IA"
+                        isActive={activeTab === 'expenses'}
+                        onClick={() => setActiveTab('expenses')}
+                    />
+                    <SidebarItem
                         icon={<DollarSign />}
                         label="Facturación"
                         isActive={activeTab === 'billing'}
@@ -95,7 +104,7 @@ const AdminDashboard = () => {
                 </nav>
 
                 <div className="text-xs text-slate-500 mt-auto">
-                    v1.1.0 - MVP Idiomas Secure
+                    v1.2.0 - Optimization Update
                 </div>
             </aside>
 
@@ -103,10 +112,11 @@ const AdminDashboard = () => {
             <main className="flex-1 p-4 md:p-10 overflow-y-auto">
                 <div className="md:hidden mb-6 flex gap-2 overflow-x-auto pb-2">
                     {/* Mobile Nav Tabs */}
+                    <button onClick={() => setActiveTab('expenses')} className={`px-4 py-2 rounded-lg ${activeTab === 'expenses' ? 'bg-blue-600' : 'bg-slate-800'}`}>IA</button>
                     <button onClick={() => setActiveTab('billing')} className={`px-4 py-2 rounded-lg ${activeTab === 'billing' ? 'bg-blue-600' : 'bg-slate-800'}`}>Pagos</button>
-                    <button onClick={() => setActiveTab('users')} className={`px-4 py-2 rounded-lg ${activeTab === 'users' ? 'bg-blue-600' : 'bg-slate-800'}`}>Usuarios</button>
                 </div>
 
+                {activeTab === 'expenses' && <ExpensesSection />}
                 {activeTab === 'billing' && <BillingSection />}
                 {activeTab === 'promos' && <PromotionsSection />}
                 {activeTab === 'users' && <UsersSection />}
@@ -125,6 +135,130 @@ const SidebarItem = ({ icon, label, isActive, onClick }) => (
         <span className="font-medium">{label}</span>
     </button>
 );
+
+const ExpensesSection = () => {
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        api.get('/admin/stats?limit=50')
+            .then(res => {
+                setStats(res.data);
+                setLoading(false);
+            })
+            .catch(err => {
+                console.error("Error fetching stats:", err);
+                setLoading(false);
+            });
+    }, []);
+
+    const formatCurrency = (val) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 4 }).format(val);
+
+    return (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <h2 className="text-3xl font-bold mb-6 flex items-center gap-3">
+                <Zap className="text-yellow-400" fill="currentColor" /> Visor de Consumo IA
+            </h2>
+
+            {loading ? (
+                <div className="text-slate-400">Cargando datos del servidor...</div>
+            ) : (
+                <>
+                    {/* Summary Cards */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                        <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <p className="text-slate-400 text-sm">Gasto Total (Sesión)</p>
+                                    <h3 className="text-3xl font-bold text-white mt-1">{formatCurrency(stats?.summary?.total_cost_window || 0)}</h3>
+                                </div>
+                                <div className="p-3 bg-red-500/20 text-red-400 rounded-lg">
+                                    <DollarSign size={24} />
+                                </div>
+                            </div>
+                            <p className="text-xs text-slate-500">En las últimas 50 peticiones</p>
+                        </div>
+
+                        <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <p className="text-slate-400 text-sm">Uso DeepSeek V3</p>
+                                    <h3 className="text-3xl font-bold text-blue-400 mt-1">{stats?.summary?.deepseek_usage_pct}%</h3>
+                                </div>
+                                <div className="p-3 bg-blue-500/20 text-blue-400 rounded-lg">
+                                    <TrendingDown size={24} />
+                                </div>
+                            </div>
+                            <p className="text-xs text-slate-500">Tráfico desviado al "Challenger"</p>
+                        </div>
+
+                        <div className="bg-slate-800 p-6 rounded-2xl border border-slate-700">
+                            <div className="flex justify-between items-start mb-4">
+                                <div>
+                                    <p className="text-slate-400 text-sm">Aciertos Caché ($0)</p>
+                                    <h3 className="text-3xl font-bold text-green-400 mt-1">{stats?.summary?.cache_hits}</h3>
+                                </div>
+                                <div className="p-3 bg-green-500/20 text-green-400 rounded-lg">
+                                    <Save size={24} />
+                                </div>
+                            </div>
+                            <p className="text-xs text-slate-500">Respuestas instantáneas gratuitas</p>
+                        </div>
+                    </div>
+
+                    {/* Logs Table */}
+                    <div className="bg-slate-800 rounded-2xl border border-slate-700 overflow-hidden">
+                        <div className="p-6 border-b border-slate-700">
+                            <h3 className="font-semibold text-lg">Historial de Transacciones en Vivo</h3>
+                        </div>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead className="bg-slate-900/50 text-slate-400 text-xs uppercase font-semibold">
+                                    <tr>
+                                        <th className="p-4">Hora</th>
+                                        <th className="p-4">Input</th>
+                                        <th className="p-4">Tráducción</th>
+                                        <th className="p-4">Cost ($)</th>
+                                        <th className="p-4">Motores (STT / LLM / TTS)</th>
+                                        <th className="p-4">Optimización</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-slate-700 text-sm">
+                                    {stats?.logs?.map((log) => (
+                                        <tr key={log.id} className="hover:bg-slate-700/30 transition-colors">
+                                            <td className="p-4 text-slate-400 whitespace-nowrap">
+                                                {new Date(log.created_at).toLocaleTimeString()}
+                                            </td>
+                                            <td className="p-4 max-w-[200px] truncate" title={log.input_text}>
+                                                {log.input_text || '...'}
+                                            </td>
+                                            <td className="p-4 max-w-[200px] truncate text-slate-300" title={log.translated_text}>
+                                                {log.translated_text}
+                                            </td>
+                                            <td className="p-4 font-mono font-bold text-emerald-400">
+                                                ${Number(log.cost_estimated).toFixed(5)}
+                                            </td>
+                                            <td className="p-4 text-xs text-slate-500">
+                                                {log.provider_stt?.split('-')[0]} / {log.provider_llm?.split('-')[0]} / {log.provider_tts?.split('-')[0]}
+                                            </td>
+                                            <td className="p-4">
+                                                <div className="flex gap-2">
+                                                    {log.is_cache_hit && <span className="px-2 py-1 bg-green-500/20 text-green-400 text-xs rounded-full font-bold">CACHE</span>}
+                                                    {log.is_challenger && <span className="px-2 py-1 bg-purple-500/20 text-purple-400 text-xs rounded-full font-bold">DEEPSEEK</span>}
+                                                    {!log.is_cache_hit && !log.is_challenger && <span className="px-2 py-1 bg-gray-700 text-gray-400 text-xs rounded-full">PREMIUM</span>}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </>
+            )}
+        </motion.div>
+    );
+};
 
 const BillingSection = () => {
     const [keys, setKeys] = useState({
@@ -211,13 +345,10 @@ const UsersSection = () => {
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Fetch real users from backend
-        // Use hardcoded URL to avoid env issues
-        const API_URL = 'https://mvp-idiomas-server.onrender.com/api';
-        fetch(`${API_URL}/admin/users`)
-            .then(res => res.json())
-            .then(data => {
-                setUsers(data);
+        // Use centralized API instead of hardcoded fetch
+        api.get('/admin/users')
+            .then(res => {
+                setUsers(res.data);
                 setLoading(false);
             })
             .catch(err => {

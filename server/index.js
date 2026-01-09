@@ -488,6 +488,40 @@ app.post('/api/speak', upload.single('audio'), async (req, res) => {
   }
 });
 
+// --- Admin Stats Endpoint ---
+app.get('/api/admin/stats', async (req, res) => {
+  try {
+    // In production, verify Admin Token here
+    const limit = parseInt(req.query.limit) || 20;
+
+    // Note: This requires the usage_logs table to exist in Supabase
+    const { data, error } = await supabaseAdmin
+      .from('usage_logs')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+
+    if (error) throw error;
+
+    // Calculate simple aggregates
+    const totalCost = data.reduce((acc, row) => acc + (row.cost_estimated || 0), 0);
+    const deepSeekCount = data.filter(row => row.provider_llm === 'deepseek-chat').length;
+
+    res.json({
+      logs: data,
+      summary: {
+        total_cost_window: totalCost,
+        deepseek_usage_pct: Math.round((deepSeekCount / data.length) * 100) || 0,
+        cache_hits: data.filter(r => r.is_cache_hit).length
+      }
+    });
+
+  } catch (error) {
+    console.error('Stats Error:', error);
+    res.status(500).json({ error: 'Failed to fetch stats (Check if table exists)' });
+  }
+});
+
 // Global Error Handler
 app.use((err, req, res, next) => {
   console.error('Unhandled Server Error:', err);

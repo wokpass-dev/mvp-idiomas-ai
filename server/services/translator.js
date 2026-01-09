@@ -25,67 +25,100 @@ const processTranslation = async ({ audioPath, fromLang, toLang, userId }) => {
     try {
         console.log(`🌐 Translating for ${userId} [${fromLang} -> ${toLang}]`);
 
-        // 1. STT: Whisper (Transcribe Source)
-        // We add a prompt to guide Whisper if we know the source language
-        const formData = new FormData();
-        formData.append('file', fs.createReadStream(audioPath));
-        formData.append('model', 'whisper-1');
-        formData.append('language', fromLang); // Hint to improve accuracy
+        // --- 0. ROUTING CONFIG ---
+        const aiRouter = require('./aiRouter');
+        const routeConfig = aiRouter.getRoute(userId);
 
-        const sttResponse = await axios.post(
-            'https://api.openai.com/v1/audio/transcriptions',
-            formData,
-            {
-                headers: {
-                    ...formData.getHeaders(),
-                    'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
-                }
+        // --- 1. STT: TRANSCRIPTION (Router -> Fallback) ---
+        let originalText;
+        // Try Router First (Deepgram)
+        const routerSTT = await aiRouter.transcribe(audioPath, fromLang, routeConfig);
+
+        if (routerSTT) {
+            originalText = routerSTT;
+            console.log(`🎤 Heard (via ${routeConfig.stt}): "${originalText}"`);
+        } else {
+            // Fallback: Whisper
+            const formData = new FormData();
+            formData.append('file', fs.createReadStream(audioPath));
+            formData.append('model', 'whisper-1');
+            formData.append('language', fromLang);
+
+            const sttResponse = await axios.post(
+                'https://api.openai.com/v1/audio/transcriptions',
+                formData,
+                { headers: { ...formData.getHeaders(), 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` } }
+            );
+            originalText = sttResponse.data.text;
+            console.log(`🎤 Heard (via Whisper): "${originalText}"`);
+        }
+
+        // --- SMART CACHE LAYER ---
+        const smartCache = require('./smartCache');
+        let translatedText = smartCache.checkCommon(originalText, fromLang, toLang);
+
+        if (translatedText) {
+            console.log(`⚡ [SMART-CACHE] Text Hit! "${originalText}" -> "${translatedText}"`);
+        } else {
+            // --- 2. LLM: TRANSLATION (Router -> Fallback) ---
+            const routerLLM = await aiRouter.translate(originalText, fromLang, toLang, routeConfig);
+
+            if (routerLLM) {
+                translatedText = routerLLM;
+                console.log(`🗣️ Translated (via ${routeConfig.llm}): "${translatedText}"`);
+            } else {
+                // Fallback: GPT-4o
+                const systemPrompt = `You are a professional simultaneous interpreter. 
+              Your task is to translate the user's input from ${fromLang} to ${toLang}.
+              - Maintain the tone, emotion, and nuance.
+              - Output ONLY the translated text. Do not add explanations or notes.
+              - If the input is empty or unintelligible, reply with "..."`;
+
+                const completion = await openai.chat.completions.create({
+                    model: "gpt-4o",
+                    messages: [
+                        { role: 'system', content: systemPrompt },
+                        { role: 'user', content: originalText }
+                    ],
+                });
+                translatedText = completion.choices[0].message.content;
+                console.log(`🗣️ Translated (via OpenAI): "${translatedText}"`);
             }
-        );
-        const originalText = sttResponse.data.text;
-        console.log(`🎤 Heard (${fromLang}): "${originalText}"`);
+        }
 
-        // 2. LLM: Contextual Translation
-        // We ask GPT to act as a professional interpreter
-        const systemPrompt = `You are a professional simultaneous interpreter. 
-    Your task is to translate the user's input from ${fromLang} to ${toLang}.
-    - Maintain the tone, emotion, and nuance.
-    - Output ONLY the translated text. Do not add explanations or notes.
-    - If the input is empty or unintelligible, reply with "..."`;
+        // --- 3. TTS: AUDIO (Cache -> Router -> Fallback) ---
+        let audioBase64 = smartCache.getAudio(translatedText, toLang);
 
-        const completion = await openai.chat.completions.create({
-            model: "gpt-4o",
-            messages: [
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: originalText }
-            ],
-        });
+        if (audioBase64) {
+            console.log(`⚡ [SMART-CACHE] Audio Hit! Serving from disk.`);
+        } else {
+            // Try Router First (Google)
+            const routerTTS = await aiRouter.speak(translatedText, toLang, routeConfig);
 
-        const translatedText = completion.choices[0].message.content;
-        console.log(`🗣️ Translated (${toLang}): "${translatedText}"`);
+            if (routerTTS) {
+                audioBase64 = routerTTS;
+                console.log(`🔊 Generated Audio (via ${routeConfig.tts})`);
+                // Save to Cache (converting base64 to buffer)
+                smartCache.saveAudio(translatedText, toLang, Buffer.from(audioBase64, 'base64'));
+            } else {
+                // Fallback: ElevenLabs
+                console.log(`🔊 Generating new Audio (via ElevenLabs)`);
+                const VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
+                const ttsResponse = await axios.post(
+                    `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
+                    {
+                        text: translatedText,
+                        model_id: "eleven_multilingual_v2",
+                        voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+                    },
+                    { headers: { 'xi-api-key': process.env.ELEVENLABS_API_KEY }, responseType: 'arraybuffer' }
+                );
 
-        // 3. TTS: ElevenLabs (Generate Target Audio)
-        // We use a high-performance model for low latency
-        const VOICE_ID = "21m00Tcm4TlvDq8ikWAM"; // Default generic voice, could be dynamic based on gender/lang
-
-        // ElevenLabs Multilingual Model is best for accents
-        const ttsResponse = await axios.post(
-            `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}`,
-            {
-                text: translatedText,
-                model_id: "eleven_multilingual_v2", // Better for non-English
-                voice_settings: { stability: 0.5, similarity_boost: 0.75 }
-            },
-            {
-                headers: {
-                    'xi-api-key': process.env.ELEVENLABS_API_KEY,
-                    'Content-Type': 'application/json'
-                },
-                responseType: 'arraybuffer'
+                const audioBuffer = Buffer.from(ttsResponse.data);
+                audioBase64 = audioBuffer.toString('base64');
+                smartCache.saveAudio(translatedText, toLang, audioBuffer);
             }
-        );
-
-        const audioBase64 = Buffer.from(ttsResponse.data).toString('base64');
+        }
 
         return {
             originalText,
