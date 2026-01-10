@@ -89,7 +89,8 @@ export default function ChatInterface({ session }) {
             }
         } catch (error) {
             console.error('Audio processing failed:', error);
-            setMessages(prev => [...prev, { role: 'assistant', content: 'Error procesando audio.' }]);
+            const errorMsg = error.response?.data?.message || error.response?.data?.details || error.message || 'Error procesando audio.';
+            setMessages(prev => [...prev, { role: 'assistant', content: `❌ Error: ${errorMsg}` }]);
         } finally {
             setLoading(false);
         }

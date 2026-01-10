@@ -364,8 +364,9 @@ app.post('/api/speak', upload.single('audio'), async (req, res) => {
       });
     }
     // 1. STT: Send to OpenAI Whisper
-    const formData = new FormData();
-    formData.append('file', fs.createReadStream(audioFile.path), 'audio.m4a');
+    const path = require('path');
+    const ext = path.extname(audioFile.originalname) || '.m4a';
+    formData.append('file', fs.createReadStream(audioFile.path), `audio${ext}`);
     formData.append('model', 'whisper-1');
 
     const transcriptionResponse = await axios.post(
