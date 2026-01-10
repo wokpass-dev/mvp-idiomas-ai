@@ -101,29 +101,27 @@ app.get('/api/debug/keys', async (req, res) => {
   };
 
   // 1. Test OpenAI
+  const openaiKey = process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.trim() : '';
+  const openaiKeyHint = openaiKey ? `${openaiKey.substring(0, 4)}...` : 'MISSING';
+
   try {
     await openai.models.list();
-    results.openai = 'OK';
     results.openai = `OK (Key: ${openaiKeyHint})`;
   } catch (e) {
-    const openaiKey = process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.trim() : '';
-    const openaiKeyHint = openaiKey ? `${openaiKey.substring(0, 4)}...` : 'MISSING';
     results.openai = `FAIL: ${e.response ? e.response.status : e.message} (Key: ${openaiKeyHint})`;
   }
 
   // 2. Test ElevenLabs
+  const elevenKey = process.env.ELEVENLABS_API_KEY ? process.env.ELEVENLABS_API_KEY.trim() : '';
+  const elevenKeyHint = elevenKey ? `${elevenKey.substring(0, 4)}...` : 'MISSING';
+
   try {
-    // Fix: Trim key for check
-    const elevenKey = process.env.ELEVENLABS_API_KEY ? process.env.ELEVENLABS_API_KEY.trim() : '';
-    const keyHint = elevenKey ? `${elevenKey.substring(0, 4)}...` : 'MISSING';
     await axios.get('https://api.elevenlabs.io/v1/user', {
       headers: { 'xi-api-key': elevenKey }
     });
-    results.elevenlabs = `OK (Key: ${keyHint})`;
+    results.elevenlabs = `OK (Key: ${elevenKeyHint})`;
   } catch (e) {
-    const elevenKey = process.env.ELEVENLABS_API_KEY ? process.env.ELEVENLABS_API_KEY.trim() : '';
-    const keyHint = elevenKey ? `${elevenKey.substring(0, 4)}...` : 'MISSING';
-    results.elevenlabs = `FAIL: ${e.response ? e.response.status : e.message} (Key: ${keyHint})`;
+    results.elevenlabs = `FAIL: ${e.response ? e.response.status : e.message} (Key: ${elevenKeyHint})`;
   }
 
   res.json(results);
