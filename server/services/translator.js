@@ -47,7 +47,7 @@ const processTranslation = async ({ audioPath, fromLang, toLang, userId }) => {
             const sttResponse = await axios.post(
                 'https://api.openai.com/v1/audio/transcriptions',
                 formData,
-                { headers: { ...formData.getHeaders(), 'Authorization': `Bearer ${process.env.OPENAI_API_KEY}` } }
+                { headers: { ...formData.getHeaders(), 'Authorization': `Bearer ${process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.trim() : ''}` } }
             );
             originalText = sttResponse.data.text;
             console.log(`🎤 Heard (via Whisper): "${originalText}"`);

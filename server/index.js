@@ -376,7 +376,7 @@ app.post('/api/speak', upload.single('audio'), async (req, res) => {
       {
         headers: {
           ...formData.getHeaders(),
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.trim() : ''}`
         }
       }
     );
