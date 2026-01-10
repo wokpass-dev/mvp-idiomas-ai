@@ -38,10 +38,12 @@ export const sendAudio = async (audioBlob, scenarioId, userId) => {
         formData.append('userId', userId);
     }
 
-    // axios handles multipart/form-data boundary automatically if we pass FormData
-    // but explicit header helps sometimes or just let axios do it.
-    // Let's rely on Axios auto-detection for FormData
-    const response = await api.post('/speak', formData);
+    // Let Axios/Browser set the correct multipart content-type with boundary
+    const response = await api.post('/speak', formData, {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    });
     return response.data;
 };
 

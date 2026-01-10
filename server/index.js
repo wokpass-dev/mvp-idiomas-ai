@@ -349,7 +349,7 @@ app.post('/api/translate', upload.single('audio'), async (req, res) => {
 app.post('/api/speak', upload.single('audio'), async (req, res) => {
   const audioFile = req.file;
   if (!audioFile) {
-    return res.status(400).json({ error: 'No audio file uploaded' });
+    return res.status(400).json({ error: 'No audio file uploaded', message: 'No se recibió el archivo de audio. (Error 400)' });
   }
 
   try {
