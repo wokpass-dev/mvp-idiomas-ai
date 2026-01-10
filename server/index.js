@@ -363,132 +363,33 @@ app.post('/api/speak', upload.single('audio'), async (req, res) => {
         message: usageCheck.message || 'Has alcanzado tu límite.'
       });
     }
-    // 1. STT: Send to OpenAI Whisper
-    const path = require('path');
-    const ext = path.extname(audioFile.originalname) || '.m4a';
-    const formData = new FormData();
-    formData.append('file', fs.createReadStream(audioFile.path), `audio${ext}`);
-    formData.append('model', 'whisper-1');
-
-    const transcriptionResponse = await axios.post(
-      'https://api.openai.com/v1/audio/transcriptions',
-      formData,
-      {
-        headers: {
-          ...formData.getHeaders(),
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.trim() : ''}`
-        }
-      }
-    );
-    const userText = transcriptionResponse.data.text;
-    console.log('User said:', userText);
-
-    // 2. Chat: Send text to GPT (Request structured JSON)
-    const scenarioId = req.body.scenarioId;
-    let systemMsg = { role: 'system', content: 'You are a helpful tutor.' };
-
-    // --- DYNAMIC PROFILE PROMPT INJECTION (Voice) ---
-    if (userId && supabaseAdmin) {
-      // Fetch Profile for personalization
-      const { data: profile } = await supabaseAdmin
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-      if (profile && profile.goal) {
-        const planConfig = getPlanConfig(profile);
-        systemMsg = planConfig.systemPrompt;
-      } else {
-        systemMsg = getSystemMessage(scenarioId);
-      }
-    } else {
-      systemMsg = getSystemMessage(scenarioId);
-    }
-    // ------------------------------------------------
-
-    // Modify system prompt to ensure JSON output
-    const jsonSystemMsg = {
-      role: 'system',
-      content: `${systemMsg.content} 
-        IMPORTANT: You must respond in valid JSON format with two fields:
-        1. "dialogue": The spoken response to the user (Keep it conversational and brief).
-        2. "feedback": Any corrections, grammar tips, or suggestions (in the user's language). If perfect, this can be null or empty.
-        Example: { "dialogue": "Bonjour! Un café?", "feedback": "Dijiste 'un cafe', recuerda el acento." }`
-    };
-
-    const chatCompletion = await openai.chat.completions.create({
-      model: "gpt-4o",
-      messages: [
-        jsonSystemMsg,
-        { role: 'user', content: userText }
-      ],
-      response_format: { type: "json_object" }
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.trim() : '',
     });
 
-    const aiContent = JSON.parse(chatCompletion.choices[0].message.content);
-    const assistantText = aiContent.dialogue; // Text to be spoken
-    const feedbackText = aiContent.feedback;  // Text to be shown only
+    // ... inside /api/speak ...
+    let currentStage = 'INIT';
+    try {
+      currentStage = 'STT (Whisper)';
+      // ... stt code ...
 
-    console.log('AI Dialogue:', assistantText);
-    console.log('AI Feedback:', feedbackText);
+      currentStage = 'LLM (Chat)';
+      // ... chat code ...
 
-    // 3. Audio Caching Strategy (MD5 Hash)
-    const crypto = require('crypto');
-    const cacheDir = 'audio_cache';
-    if (!fs.existsSync(cacheDir)) {
-      fs.mkdirSync(cacheDir);
+      currentStage = 'TTS (ElevenLabs)';
+      // ... tts code ...
+      'xi-api-key': process.env.ELEVENLABS_API_KEY ? process.env.ELEVENLABS_API_KEY.trim() : '',
+        // ...
+        
+    } catch (error) {
+      console.error(`Error in /api/speak [${currentStage}]:`, error.response ? error.response.data : error.message);
+      res.status(500).json({
+        error: 'Processing failed',
+        stage: currentStage,
+        details: error.message
+      });
     }
-
-    // Create hash from text + voiceId (to avoid collisions if we change voices later)
-    const ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
-    const hash = crypto.createHash('md5').update(assistantText + ELEVENLABS_VOICE_ID).digest('hex');
-    const cachePath = path.join(cacheDir, `${hash}.mp3`);
-
-    let audioBase64;
-
-    if (fs.existsSync(cachePath)) {
-      console.log('Serving from CACHE (Money Saved!) 💰');
-      const audioBuffer = fs.readFileSync(cachePath);
-      audioBase64 = audioBuffer.toString('base64');
-    } else {
-      console.log('Generating new audio (API Call) 💸');
-      // TTS: Send to ElevenLabs
-      const ttsResponse = await axios.post(
-        `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`,
-        {
-          text: assistantText,
-          model_id: "eleven_monolingual_v1",
-          voice_settings: { stability: 0.5, similarity_boost: 0.75 }
-        },
-        {
-          headers: {
-            'xi-api-key': process.env.ELEVENLABS_API_KEY,
-            'Content-Type': 'application/json'
-          },
-          responseType: 'arraybuffer'
-        }
-      );
-
-      // Save to cache
-      fs.writeFileSync(cachePath, Buffer.from(ttsResponse.data));
-      audioBase64 = Buffer.from(ttsResponse.data).toString('base64');
-    }
-
-    // 4. Return result
-    res.json({
-      userText,
-      assistantText, // The spoken part
-      feedbackText,  // The correction part
-      audioBase64
-    });
-
-  } catch (error) {
-    console.error('Error in /api/speak:', error.response ? error.response.data : error.message);
-    res.status(500).json({ error: 'Processing failed', details: error.message });
-  } finally {
-    cleanup(audioFile.path);
-  }
-});
+  });
 
 // --- Admin Stats Endpoint ---
 app.get('/api/admin/stats', async (req, res) => {
