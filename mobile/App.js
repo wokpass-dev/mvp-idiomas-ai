@@ -1,66 +1,60 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import { Mic, GraduationCap, User } from 'lucide-react-native';
 import { StatusBar } from 'expo-status-bar';
+import { View, Text } from 'react-native';
 
-// Placeholder Screens
+// Screens
 import TalkmeScreen from './screens/TalkmeScreen';
 import AcademyScreen from './screens/AcademyScreen';
-// Simple placeholder for Profile
-import { View, Text } from 'react-native';
+
+// Placeholder Profile
 const ProfileScreen = () => (
-  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-    <Text>Perfil de Usuario (Próximamente)</Text>
+  <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#0f172a' }}>
+    <Text style={{ color: 'white' }}>Perfil de Usuario (Próximamente)</Text>
   </View>
 );
 
-const Tab = createBottomTabNavigator();
+const Stack = createNativeStackNavigator();
 
 export default function App() {
   return (
     <SafeAreaProvider>
       <NavigationContainer>
-        <Tab.Navigator
+        <Stack.Navigator
           screenOptions={{
-            headerShown: false,
-            tabBarStyle: {
-              backgroundColor: '#0f172a', // Slate 900
-              borderTopColor: '#1e293b',
-              height: 60,
-              paddingBottom: 8,
-              paddingTop: 8
+            headerStyle: {
+              backgroundColor: '#0f172a', // Dark Blue Header
             },
-            tabBarActiveTintColor: '#06b6d4', // Cyan 500
-            tabBarInactiveTintColor: '#64748b', // Slate 500
+            headerTintColor: '#fff', // White Back Button
+            headerTitleStyle: {
+              fontWeight: 'bold',
+            },
+            contentStyle: {
+              backgroundColor: '#0f172a' // Global BG
+            }
           }}
         >
-          <Tab.Screen
+          {/* HOME: Full Screen (No Header) */}
+          <Stack.Screen
             name="Talkme"
             component={TalkmeScreen}
-            options={{
-              tabBarLabel: 'Talkme',
-              tabBarIcon: ({ color, size }) => <Mic color={color} size={size} />,
-            }}
+            options={{ headerShown: false }}
           />
-          <Tab.Screen
+
+          {/* SUB-SCREENS: Show Header for Back Button */}
+          <Stack.Screen
             name="Academy"
             component={AcademyScreen}
-            options={{
-              tabBarLabel: 'Academia',
-              tabBarIcon: ({ color, size }) => <GraduationCap color={color} size={size} />,
-            }}
+            options={{ title: 'Academia' }}
           />
-          <Tab.Screen
+          <Stack.Screen
             name="Profile"
             component={ProfileScreen}
-            options={{
-              tabBarLabel: 'Perfil',
-              tabBarIcon: ({ color, size }) => <User color={color} size={size} />,
-            }}
+            options={{ title: 'Mi Perfil' }}
           />
-        </Tab.Navigator>
+        </Stack.Navigator>
         <StatusBar style="light" />
       </NavigationContainer>
     </SafeAreaProvider>

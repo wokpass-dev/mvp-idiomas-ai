@@ -338,7 +338,7 @@ app.post('/api/translate', upload.single('audio'), async (req, res) => {
 
   } catch (error) {
     console.error('Translation Endpoint Error:', error);
-    res.status(500).json({ error: 'Translation failed' });
+    res.status(500).json({ error: 'Translation failed', details: error.message });
   } finally {
     // Always cleanup uploaded file
     cleanup(audioFile.path);
@@ -365,7 +365,7 @@ app.post('/api/speak', upload.single('audio'), async (req, res) => {
     }
     // 1. STT: Send to OpenAI Whisper
     const formData = new FormData();
-    formData.append('file', fs.createReadStream(audioFile.path));
+    formData.append('file', fs.createReadStream(audioFile.path), 'audio.m4a');
     formData.append('model', 'whisper-1');
 
     const transcriptionResponse = await axios.post(

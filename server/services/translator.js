@@ -40,7 +40,7 @@ const processTranslation = async ({ audioPath, fromLang, toLang, userId }) => {
         } else {
             // Fallback: Whisper
             const formData = new FormData();
-            formData.append('file', fs.createReadStream(audioPath));
+            formData.append('file', fs.createReadStream(audioPath), 'audio.m4a');
             formData.append('model', 'whisper-1');
             formData.append('language', fromLang);
 
@@ -119,6 +119,20 @@ const processTranslation = async ({ audioPath, fromLang, toLang, userId }) => {
                 smartCache.saveAudio(translatedText, toLang, audioBuffer);
             }
         }
+
+        // --- 4. LOG USAGE (FIRE & FORGET) ---
+        // We log async so user doesn't wait
+        const UsageLogger = require('./usageLogger');
+        UsageLogger.logTransaction({
+            userId,
+            feature: 'translator',
+            providerStt: routerSTT ? (routeConfig.stt === 'deepgram' ? 'deepgram' : 'openai-whisper') : 'openai-whisper',
+            providerLlm: 'openai-gpt4o', // Currently hardcoded fallback mostly
+            providerTts: routeConfig.tts,
+            inputTokens: originalText ? originalText.length / 4 : 0, // Approx
+            outputTokens: translatedText ? translatedText.length / 4 : 0,
+            cacheHit: !!smartCache.checkCommon(originalText, fromLang, toLang)
+        }).catch(err => console.error('Logging Error:', err));
 
         return {
             originalText,

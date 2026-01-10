@@ -1,50 +1,49 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, SafeAreaView } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert, SafeAreaView, Image, StatusBar } from 'react-native';
 import { Audio } from 'expo-av';
-import { Mic, Volume2 } from 'lucide-react-native';
+import { Mic, GraduationCap, User } from 'lucide-react-native';
 
-const BACKEND_URL = 'https://mvp-idiomas-client.onrender.com'; // Adjust if needed
+const BACKEND_URL = 'https://mvp-idiomas-server.onrender.com';
 
-export default function TalkmeScreen() {
+export default function TalkmeScreen({ navigation }) {
     const [recording, setRecording] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
-    const [lastTranslation, setLastTranslation] = useState(null); // { original, translated }
-    const [activeButton, setActiveButton] = useState(null); // 'source' or 'target'
+    const [lastTranslation, setLastTranslation] = useState(null);
+    const [activeButton, setActiveButton] = useState(null);
 
-    // Request permissions on mount
+    // Sound
+    // Chirp removed temporarily to fix build (missing asset)
+    /* const playChirp = async () => { ... } */
+
+    const playAudio = async (base64) => {
+        try {
+            const { sound } = await Audio.Sound.createAsync(
+                { uri: `data:audio/mp3;base64,${base64}` },
+                { shouldPlay: true }
+            );
+        } catch (e) { console.error('Audio Play Error:', e); }
+    };
+
+    // Permissions
     useEffect(() => {
         (async () => {
-            await Audio.requestPermissionsAsync();
-            await Audio.setAudioModeAsync({
-                allowsRecordingIOS: true,
-                playsInSilentModeIOS: true,
-            });
+            const { status } = await Audio.requestPermissionsAsync();
+            if (status !== 'granted') Alert.alert('Aviso', 'Se requiere micrófono.');
+            await Audio.setAudioModeAsync({ allowsRecordingIOS: true, playsInSilentModeIOS: true });
         })();
     }, []);
 
-    const playSound = async (base64Audio) => {
-        try {
-            const { sound } = await Audio.Sound.createAsync(
-                { uri: `data:audio/mp3;base64,${base64Audio}` },
-                { shouldPlay: true }
-            );
-            // sound.playAsync(); // createAsync with shouldPlay:true already plays it
-        } catch (error) {
-            console.log('Error playing sound:', error);
-        }
-    };
-
     const startRecording = async (lang) => {
         try {
+            // await playChirp(); // Disabled
             setActiveButton(lang);
-
             const { recording } = await Audio.Recording.createAsync(
                 Audio.RecordingOptionsPresets.HIGH_QUALITY
             );
             setRecording(recording);
-            // Haptic or Sound feedback here if possible
         } catch (err) {
-            console.error('Failed to start recording', err);
+            console.error('Record Start Error:', err);
+            setActiveButton(null);
         }
     };
 
@@ -59,43 +58,47 @@ export default function TalkmeScreen() {
             const uri = recording.getURI();
             setRecording(null);
 
-            // Send to Backend
+            // Upload
             const formData = new FormData();
-            formData.append('audio', {
-                uri: uri,
-                type: 'audio/m4a', // Expo High Quality preset uses m4a
-                name: 'upload.m4a',
-            });
-            formData.append('userId', 'mobile-guest'); // TODO: Get real ID
+            formData.append('audio', { uri, type: 'audio/m4a', name: 'audio.m4a' });
+            formData.append('userId', 'mobile-guest');
             formData.append('fromLang', fromLang);
             formData.append('toLang', toLang);
+
+            // Network Timeout Controller
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000);
 
             const response = await fetch(`${BACKEND_URL}/api/translate`, {
                 method: 'POST',
                 body: formData,
-                headers: {
-                    'Accept': 'application/json',
-                },
+                headers: { 'Accept': 'application/json' },
+                signal: controller.signal
+            }).catch(err => {
+                throw new Error(err.name === 'AbortError' ? 'Tiempo de espera agotado' : 'No me puedo conectar con el servidor 🛑');
             });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errData = await response.json().catch(() => ({}));
+                throw new Error(errData.details || `Error del Servidor: ${response.status}`);
+            }
 
             const data = await response.json();
 
-            if (data.error) {
-                Alert.alert('Error', data.message || 'Error en traducción');
-            } else {
-                setLastTranslation({
-                    original: data.originalText,
-                    translated: data.translatedText
-                });
-                // Auto Play
-                if (data.audioBase64) {
-                    await playSound(data.audioBase64);
-                }
-            }
+            if (data.error) throw new Error(data.message || 'Error desconocido en API');
+
+            setLastTranslation({
+                original: data.originalText,
+                translated: data.translatedText
+            });
+
+            if (data.audioBase64) await playAudio(data.audioBase64);
 
         } catch (error) {
-            console.error('Error sending audio', error);
-            Alert.alert('Error', 'No se pudo conectar con el servidor.');
+            console.error('Translation process error:', error);
+            Alert.alert("⚠️ Error de Conexión", error.message);
         } finally {
             setIsProcessing(false);
         }
@@ -103,73 +106,77 @@ export default function TalkmeScreen() {
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Header Log */}
-            <View style={styles.logContainer}>
+            <StatusBar style="light" />
+
+            {/* HEADER: LOGO + MENU */}
+            <View style={styles.header}>
+                <Image
+                    source={require('../assets/puentes_logo.png')}
+                    style={styles.logoImage}
+                />
+                {/* <Text style={{ color: 'white', fontSize: 20, fontWeight: 'bold' }}>PUENTES GLOBALES</Text> */}
+                <View style={styles.headerIcons}>
+                    <TouchableOpacity onPress={() => navigation.navigate('Academy')} style={styles.iconBtn}>
+                        <GraduationCap color="white" size={28} />
+                    </TouchableOpacity>
+                    <TouchableOpacity onPress={() => navigation.navigate('Profile')} style={styles.iconBtn}>
+                        <User color="white" size={28} />
+                    </TouchableOpacity>
+                </View>
+            </View>
+
+            {/* TRANSLATION BOX */}
+            <View style={styles.displayContainer}>
                 {lastTranslation ? (
-                    <View>
-                        <Text style={styles.logOriginal}>"{lastTranslation.original}"</Text>
-                        <Text style={styles.logTranslated}>"{lastTranslation.translated}"</Text>
-                    </View>
+                    <>
+                        <Text style={styles.textOriginal}>"{lastTranslation.original}"</Text>
+                        <Text style={styles.textArrow}>⬇️</Text>
+                        <Text style={styles.textTranslated}>"{lastTranslation.translated}"</Text>
+                    </>
                 ) : (
-                    <Text style={styles.placeholderText}>Presiona un botón para hablar...</Text>
+                    <Text style={styles.placeholder}>Presiona un botón para hablar...</Text>
                 )}
             </View>
 
-            {/* Main Controls */}
-            <View style={styles.controlsContainer}>
+            {/* CONTROLS: FULL CENTERED */}
+            <View style={styles.controlsArea}>
 
-                {/* TARGET BUTTON (Top / Inverted) */}
+                {/* BUTTON 2: TARGET (English) */}
                 <TouchableOpacity
-                    style={[
-                        styles.pttButton,
-                        styles.targetButton,
-                        activeButton === 'target' && styles.activeButton,
-                        isProcessing && styles.disabledButton
-                    ]}
-                    disabled={isProcessing || (activeButton && activeButton !== 'target')}
+                    style={[styles.btn, styles.btnTarget, activeButton === 'target' && styles.btnActive]}
                     onPressIn={() => startRecording('target')}
                     onPressOut={() => stopRecording('en', 'es')}
+                    disabled={isProcessing}
                 >
-                    <View style={{ transform: [{ rotate: '180deg' }] }}>
-                        <Text style={styles.buttonLabel}>ENGLISH (ELLOS)</Text>
-                        {activeButton === 'target' ? (
-                            <Text style={styles.buttonStatus}>GRABANDO...</Text>
-                        ) : (
-                            <Mic color="white" size={32} style={{ alignSelf: 'center', marginTop: 8 }} />
-                        )}
+                    <View style={{ transform: [{ rotate: '180deg' }], alignItems: 'center' }}>
+                        <Text style={styles.btnLabel}>ENGLISH (ELLOS)</Text>
+                        <Mic color="white" size={32} />
                     </View>
                 </TouchableOpacity>
 
-                {/* SOURCE BUTTON (Bottom) */}
+                {/* SPACER */}
+                <View style={{ height: 30 }} />
+
+                {/* BUTTON 1: SOURCE (Spanish) */}
                 <TouchableOpacity
-                    style={[
-                        styles.pttButton,
-                        styles.sourceButton,
-                        activeButton === 'source' && styles.activeButton,
-                        isProcessing && styles.disabledButton
-                    ]}
-                    disabled={isProcessing || (activeButton && activeButton !== 'source')}
+                    style={[styles.btn, styles.btnSource, activeButton === 'source' && styles.btnActive]}
                     onPressIn={() => startRecording('source')}
                     onPressOut={() => stopRecording('es', 'en')}
+                    disabled={isProcessing}
                 >
-                    <Text style={styles.buttonLabel}>ESPAÑOL (YO)</Text>
-                    {activeButton === 'source' ? (
-                        <Text style={styles.buttonStatus}>GRABANDO...</Text>
-                    ) : (
-                        <Mic color="white" size={32} style={{ alignSelf: 'center', marginTop: 8 }} />
-                    )}
+                    <Mic color="white" size={32} />
+                    <Text style={styles.btnLabel}>ESPAÑOL (YO)</Text>
                 </TouchableOpacity>
 
             </View>
 
-            {/* Loading Overlay */}
+            {/* LOADING OVERLAY */}
             {isProcessing && (
-                <View style={styles.loadingOverlay}>
-                    <ActivityIndicator size="large" color="#06b6d4" />
-                    <Text style={styles.loadingText}>Traduciendo...</Text>
+                <View style={styles.loader}>
+                    <ActivityIndicator size="large" color="#0ea5e9" />
+                    <Text style={{ color: 'white', marginTop: 10 }}>Traduciendo...</Text>
                 </View>
             )}
-
         </SafeAreaView>
     );
 }
@@ -177,91 +184,98 @@ export default function TalkmeScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#0f172a', // Slate 900
+        backgroundColor: '#0f172a',
+        paddingTop: 10
     },
-    logContainer: {
-        height: '20%',
-        padding: 20,
-        justifyContent: 'center',
+    header: {
+        height: 70,
+        flexDirection: 'row', // Horizontal layout
+        justifyContent: 'space-between',
         alignItems: 'center',
+        paddingHorizontal: 20,
         borderBottomWidth: 1,
         borderBottomColor: '#1e293b',
+        marginTop: 10
     },
-    logOriginal: {
-        color: '#94a3b8',
-        fontSize: 16,
-        textAlign: 'center',
-        marginBottom: 8,
-        fontStyle: 'italic',
+    logoImage: {
+        width: 180,
+        height: 50,
+        resizeMode: 'contain'
     },
-    logTranslated: {
-        color: '#22d3ee', // Cyan 400
-        fontSize: 24,
-        fontWeight: 'bold',
-        textAlign: 'center',
+    headerIcons: {
+        flexDirection: 'row',
+        gap: 15
     },
-    placeholderText: {
-        color: '#475569',
-        fontSize: 16,
+    iconBtn: {
+        padding: 5
     },
-    controlsContainer: {
-        flex: 1,
-        flexDirection: 'column',
-    },
-    pttButton: {
+    displayContainer: {
         flex: 1,
         justifyContent: 'center',
         alignItems: 'center',
-        margin: 8,
-        borderRadius: 24,
-        shadowColor: "#000",
-        shadowOffset: {
-            width: 0,
-            height: 4,
-        },
-        shadowOpacity: 0.30,
-        shadowRadius: 4.65,
+        padding: 20
+    },
+    textOriginal: {
+        color: '#94a3b8',
+        fontSize: 18,
+        fontStyle: 'italic',
+        textAlign: 'center'
+    },
+    textArrow: {
+        fontSize: 24,
+        marginVertical: 10,
+        color: '#475569'
+    },
+    textTranslated: {
+        color: '#22d3ee',
+        fontSize: 26,
+        fontWeight: 'bold',
+        textAlign: 'center'
+    },
+    placeholder: {
+        color: '#64748b',
+        fontSize: 16
+    },
+    controlsArea: {
+        height: 400, // Large control area
+        paddingHorizontal: 30, // Narrower for nicer button shape
+        justifyContent: 'center',
+        marginBottom: 40 // Bottom margin since no nav bar
+    },
+    btn: {
+        height: 150, // Very nice large touch area
+        borderRadius: 25,
+        justifyContent: 'center',
+        alignItems: 'center',
         elevation: 8,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4.65,
     },
-    targetButton: {
-        backgroundColor: '#ef4444', // Red 500
-        marginBottom: 4,
+    btnTarget: {
+        backgroundColor: '#ef4444' // Red
     },
-    sourceButton: {
-        backgroundColor: '#0ea5e9', // Sky 500
-        marginTop: 4,
+    btnSource: {
+        backgroundColor: '#0ea5e9' // Blue
     },
-    activeButton: {
-        backgroundColor: '#10b981', // Emerald 500 (Recording state)
+    btnActive: {
+        backgroundColor: '#10b981',
         transform: [{ scale: 0.98 }]
     },
-    disabledButton: {
-        opacity: 0.5
-    },
-    buttonLabel: {
+    btnLabel: {
         color: 'white',
-        fontSize: 20,
+        fontSize: 24, // Large legible font
         fontWeight: '900',
-        letterSpacing: 1,
-        textAlign: 'center',
+        marginTop: 10,
+        marginBottom: 10,
+        letterSpacing: 1
     },
-    buttonStatus: {
-        color: 'white',
-        fontSize: 14,
-        fontWeight: 'bold',
-        marginTop: 8,
-    },
-    loadingOverlay: {
+    loader: {
         ...StyleSheet.absoluteFillObject,
-        backgroundColor: 'rgba(0,0,0,0.7)',
+        backgroundColor: 'rgba(0,0,0,0.8)',
         justifyContent: 'center',
         alignItems: 'center',
-    },
-    loadingText: {
-        color: 'white',
-        marginTop: 16,
-        fontSize: 18,
-        fontWeight: 'bold',
+        zIndex: 99
     }
-
 });
