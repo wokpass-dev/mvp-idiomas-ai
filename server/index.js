@@ -94,6 +94,35 @@ app.get('/api/debug-config', (req, res) => {
   });
 });
 
+app.get('/api/debug/keys', async (req, res) => {
+  const results = {
+    openai: 'PENDING',
+    elevenlabs: 'PENDING'
+  };
+
+  // 1. Test OpenAI
+  try {
+    await openai.models.list();
+    results.openai = 'OK';
+  } catch (e) {
+    results.openai = `FAIL: ${e.response ? e.response.status : e.message}`;
+  }
+
+  // 2. Test ElevenLabs
+  try {
+    // Fix: Trim key for check
+    const elevenKey = process.env.ELEVENLABS_API_KEY ? process.env.ELEVENLABS_API_KEY.trim() : '';
+    await axios.get('https://api.elevenlabs.io/v1/user', {
+      headers: { 'xi-api-key': elevenKey }
+    });
+    results.elevenlabs = 'OK';
+  } catch (e) {
+    results.elevenlabs = `FAIL: ${e.response ? e.response.status : e.message}`;
+  }
+
+  res.json(results);
+});
+
 app.get('/api/admin/users', (req, res) => {
   res.json([
     { id: 'usr_123', email: 'gabriel@ejemplo.com', progress: 'Nivel A2 (En curso)', last_active: '2026-01-05' },
