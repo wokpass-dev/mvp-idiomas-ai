@@ -2,7 +2,6 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
-
 const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
@@ -18,27 +17,28 @@ const upload = multer({ dest: uploadDir + '/' });
 
 // Helper: Delete file
 const cleanup = (filePath) => {
-  fs.unlink(filePath, (err) => {
-    if (err) console.error('Error deleting file:', err);
-  });
+  try {
+    if (fs.existsSync(filePath)) {
+      fs.unlink(filePath, (err) => {
+        if (err) console.error('Error deleting file:', err);
+      });
+    }
+  } catch (e) { console.error('Cleanup error:', e); }
 };
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// CORS Configuration
 const corsOptions = {
-  origin: '*', // Allow all origins for MVP. For prod, could restrict to client URL.
+  origin: '*',
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
 };
 
 app.use(cors(corsOptions));
-// app.options('*', cors(corsOptions)); // Removed to fix Express 5 PathError
 app.use(express.json());
 
-// Request logging middleware
 app.use((req, res, next) => {
   console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
   next();
@@ -46,26 +46,21 @@ app.use((req, res, next) => {
 
 const { createClient } = require('@supabase/supabase-js');
 
-// Init Supabase Admin (Service Role)
-// Falls back to ANON key if SERVICE key matches (for dev), but needs SERVICE for best security
 const supabaseUrl = process.env.SUPABASE_URL;
 const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY;
 const supabaseAdmin = (supabaseUrl && supabaseKey) ? createClient(supabaseUrl, supabaseKey) : null;
 
 const OpenAI = require('openai');
-
+// Fix 401: Trim API Key
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.trim() : '',
 });
 
-// Parsing middleware for Twilio (form-urlencoded)
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
 const whatsappRouter = require('./whatsapp');
 app.use('/api/whatsapp', whatsappRouter);
 
-// Health Check
 app.get('/', (req, res) => {
   res.json({
     status: 'online',
@@ -88,7 +83,6 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// DEBUG: Check if Env Vars are loaded correctly
 app.get('/api/debug-config', (req, res) => {
   res.json({
     has_openai: !!process.env.OPENAI_API_KEY,
@@ -100,9 +94,7 @@ app.get('/api/debug-config', (req, res) => {
   });
 });
 
-// Admin Enpoints
 app.get('/api/admin/users', (req, res) => {
-  // Mock data for MVP - In production this would query Supabase Admin API
   res.json([
     { id: 'usr_123', email: 'gabriel@ejemplo.com', progress: 'Nivel A2 (En curso)', last_active: '2026-01-05' },
     { id: 'usr_456', email: 'demo@idiomas.ai', progress: 'Nivel B1 (Completado)', last_active: '2026-01-04' },
@@ -110,16 +102,12 @@ app.get('/api/admin/users', (req, res) => {
   ]);
 });
 
-
 const scenarios = require('./scenarios');
 
-// Get Scenarios
 app.get('/api/scenarios', (req, res) => {
   res.json(scenarios);
 });
 
-// Helper to get system prompt
-// Helper to get system prompt (Recursive Search)
 const getSystemMessage = (scenarioId) => {
   for (const level of scenarios) {
     if (level.modules) {
@@ -133,25 +121,20 @@ const getSystemMessage = (scenarioId) => {
       }
     }
   }
-  // Fallback
   return { role: 'system', content: 'You are a helpful language tutor (Default Context).' };
 };
 
-const { getPlanConfig } = require('./services/profileRules'); // Import Rule Engine
+const { getPlanConfig } = require('./services/profileRules');
 
-// Helper: Freemium Usage Check
 const checkUsage = async (userId) => {
-  if (!userId || !supabaseAdmin) return { allowed: true }; // Skip if no user or no db connection
-
+  if (!userId || !supabaseAdmin) return { allowed: true };
   try {
-    // 1. Check Profile
     let { data: profile, error: selectError } = await supabaseAdmin
       .from('profiles')
       .select('usage_count, is_premium')
       .eq('id', userId)
       .single();
 
-    // SELF-HEALING: If no profile exists (old user), create one
     if (!profile && (!selectError || selectError.code === 'PGRST116')) {
       console.log('⚠️ Profile missing. Creating default profile...');
       const { data: newProfile, error: createError } = await supabaseAdmin
@@ -159,7 +142,6 @@ const checkUsage = async (userId) => {
         .insert([{ id: userId, usage_count: 0, is_premium: false }])
         .select()
         .single();
-
       if (createError) {
         console.error('Error creating profile:', createError);
         return { allowed: false, error: 'User profile error' };
@@ -168,13 +150,11 @@ const checkUsage = async (userId) => {
     }
 
     if (profile) {
-      // Get Plan Config to determine limits
       const planConfig = getPlanConfig(profile);
       const DAILY_LIMIT = planConfig.limits.dailyMessages || 5;
 
       console.log(`📊 Usage: ${profile.usage_count}/${DAILY_LIMIT} | Premium: ${profile.is_premium} | Plan: ${planConfig.planId}`);
 
-      // 2. Enforce Limit
       if (!profile.is_premium && profile.usage_count >= DAILY_LIMIT) {
         console.log('🛑 Limit Reached. Blocking.');
         return {
@@ -184,7 +164,6 @@ const checkUsage = async (userId) => {
         };
       }
 
-      // 3. Increment Usage (Fire and Forget)
       supabaseAdmin.rpc('increment_usage', { user_id: userId }).then(({ error }) => {
         if (error) console.error('Error Incrementing Usage:', error);
       });
@@ -192,13 +171,12 @@ const checkUsage = async (userId) => {
       return { allowed: true };
     }
   } catch (err) {
-    console.error('Freemium Check Error:', err);
-    return { allowed: true }; // Fail open on DB error to avoid outage
+    console.error('Freemium Check Check Error:', err);
+    return { allowed: true };
   }
   return { allowed: true };
 };
 
-// --- PROFILE ENDPOINTS ---
 app.post('/api/profile', async (req, res) => {
   const { userId, goal, level, interests, age } = req.body;
   if (!supabaseAdmin) return res.status(500).json({ error: 'DB not connected' });
@@ -236,10 +214,10 @@ app.get('/api/profile/:userId', async (req, res) => {
   if (error) return res.status(404).json({ error: 'Not found' });
   res.json(data);
 });
+
 app.post('/api/verify-code', (req, res) => {
   const { code } = req.body;
   const validCodes = (process.env.STUDENT_ACCESS_CODES || '').split(',');
-
   if (validCodes.includes(code)) {
     res.json({ valid: true });
   } else {
@@ -247,9 +225,6 @@ app.post('/api/verify-code', (req, res) => {
   }
 });
 
-// -------------------------
-
-// Chat Endpoint
 app.post('/api/chat', async (req, res) => {
   try {
     const { messages, scenarioId, userId } = req.body;
@@ -258,8 +233,6 @@ app.post('/api/chat', async (req, res) => {
       return res.status(400).json({ error: 'Messages array is required' });
     }
 
-    // SERVER-SIDE FREEMIUM CHECK 🔒
-    // SERVER-SIDE FREEMIUM CHECK 🔒
     const usageCheck = await checkUsage(userId);
     if (!usageCheck.allowed) {
       return res.status(usageCheck.status || 402).json({
@@ -268,30 +241,25 @@ app.post('/api/chat', async (req, res) => {
       });
     }
 
-    // --- DYNAMIC PROFILE PROMPT INJECTION ---
     let systemMsg = { role: 'system', content: 'You are a helpful tutor.' };
 
     if (userId && supabaseAdmin) {
-      // Fetch Profile for personalization
       const { data: profile } = await supabaseAdmin
         .from('profiles')
-        .select('*') // Get all fields including goal, interests etc.
+        .select('*')
         .eq('id', userId)
         .single();
 
       if (profile && profile.goal) {
-        // Use RULE ENGINE if profile has data
         const planConfig = getPlanConfig(profile);
         systemMsg = planConfig.systemPrompt;
         console.log(`🧠 Rule Engine for ${userId}: Plan=${planConfig.planId}`);
       } else {
-        // Fallback to Scenario-based or Default
         systemMsg = getSystemMessage(scenarioId);
       }
     } else {
       systemMsg = getSystemMessage(scenarioId);
     }
-    // ----------------------------------------
 
     const userMessages = messages.filter(m => m.role !== 'system');
     const finalMessages = [systemMsg, ...userMessages];
@@ -312,8 +280,6 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
-
-// --- TRANSLATOR ENDPOINT (MOBILE) ---
 const { processTranslation } = require('./services/translator');
 
 app.post('/api/translate', upload.single('audio'), async (req, res) => {
@@ -323,10 +289,6 @@ app.post('/api/translate', upload.single('audio'), async (req, res) => {
   if (!audioFile) return res.status(400).json({ error: 'No audio provided' });
 
   try {
-    // Optional: Check Usage Limits here if you want to charge for translations
-    // const usageCheck = await checkUsage(userId);
-    // if (!usageCheck.allowed) ...
-
     const result = await processTranslation({
       audioPath: audioFile.path,
       fromLang: fromLang || 'es',
@@ -340,7 +302,6 @@ app.post('/api/translate', upload.single('audio'), async (req, res) => {
     console.error('Translation Endpoint Error:', error);
     res.status(500).json({ error: 'Translation failed', details: error.message });
   } finally {
-    // Always cleanup uploaded file
     cleanup(audioFile.path);
   }
 });
@@ -352,52 +313,151 @@ app.post('/api/speak', upload.single('audio'), async (req, res) => {
     return res.status(400).json({ error: 'No audio file uploaded', message: 'No se recibió el archivo de audio. (Error 400)' });
   }
 
+  let currentStage = 'INIT';
+
   try {
-    const userId = req.body.userId; // Extract userId specifically for freemium
-    // SERVER-SIDE FREEMIUM CHECK 🔒
+    const userId = req.body.userId;
     const usageCheck = await checkUsage(userId);
     if (!usageCheck.allowed) {
-      if (req.file && req.file.path) cleanup(req.file.path); // Cleanup upload before returning
+      if (req.file && req.file.path) cleanup(req.file.path);
       return res.status(usageCheck.status || 402).json({
         error: 'Limit Reached',
         message: usageCheck.message || 'Has alcanzado tu límite.'
       });
     }
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.trim() : '',
+
+    // 1. STT: Send to OpenAI Whisper
+    currentStage = 'STT (Whisper)';
+    const path = require('path');
+    const ext = path.extname(audioFile.originalname) || '.m4a';
+
+    // Fix: Explicitly declare formData
+    const formData = new FormData();
+    formData.append('file', fs.createReadStream(audioFile.path), `audio${ext}`);
+    formData.append('model', 'whisper-1');
+
+    const transcriptionResponse = await axios.post(
+      'https://api.openai.com/v1/audio/transcriptions',
+      formData,
+      {
+        headers: {
+          ...formData.getHeaders(),
+          // Fix 401: Trim API Key here as well
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.trim() : ''}`
+        }
+      }
+    );
+    const userText = transcriptionResponse.data.text;
+    console.log('User said:', userText);
+
+    // 2. Chat: Send text to GPT
+    currentStage = 'LLM (Chat)';
+    const scenarioId = req.body.scenarioId;
+    let systemMsg = { role: 'system', content: 'You are a helpful tutor.' };
+
+    if (userId && supabaseAdmin) {
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      if (profile && profile.goal) {
+        const planConfig = getPlanConfig(profile);
+        systemMsg = planConfig.systemPrompt;
+      } else {
+        systemMsg = getSystemMessage(scenarioId);
+      }
+    } else {
+      systemMsg = getSystemMessage(scenarioId);
+    }
+
+    const jsonSystemMsg = {
+      role: 'system',
+      content: `${systemMsg.content} 
+        IMPORTANT: You must respond in valid JSON format with two fields:
+        1. "dialogue": The spoken response to the user (Keep it conversational and brief).
+        2. "feedback": Any corrections, grammar tips, or suggestions (in the user's language). If perfect, this can be null or empty.
+        Example: { "dialogue": "Bonjour! Un café?", "feedback": "Dijiste 'un cafe', recuerda el acento." }`
+    };
+
+    const chatCompletion = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: [
+        jsonSystemMsg,
+        { role: 'user', content: userText }
+      ],
+      response_format: { type: "json_object" }
     });
 
-    // ... inside /api/speak ...
-    let currentStage = 'INIT';
-    try {
-      currentStage = 'STT (Whisper)';
-      // ... stt code ...
+    const aiContent = JSON.parse(chatCompletion.choices[0].message.content);
+    const assistantText = aiContent.dialogue;
+    const feedbackText = aiContent.feedback;
 
-      currentStage = 'LLM (Chat)';
-      // ... chat code ...
+    console.log('AI Dialogue:', assistantText);
+    console.log('AI Feedback:', feedbackText);
 
-      currentStage = 'TTS (ElevenLabs)';
-      // ... tts code ...
-      'xi-api-key': process.env.ELEVENLABS_API_KEY ? process.env.ELEVENLABS_API_KEY.trim() : '',
-        // ...
-        
-    } catch (error) {
-      console.error(`Error in /api/speak [${currentStage}]:`, error.response ? error.response.data : error.message);
-      res.status(500).json({
-        error: 'Processing failed',
-        stage: currentStage,
-        details: error.message
-      });
+    // 3. TTS: ElevenLabs
+    currentStage = 'TTS (ElevenLabs)';
+    const crypto = require('crypto');
+    const cacheDir = 'audio_cache';
+    if (!fs.existsSync(cacheDir)) {
+      fs.mkdirSync(cacheDir);
     }
-  });
 
-// --- Admin Stats Endpoint ---
+    const ELEVENLABS_VOICE_ID = "21m00Tcm4TlvDq8ikWAM";
+    const hash = crypto.createHash('md5').update(assistantText + ELEVENLABS_VOICE_ID).digest('hex');
+    const cachePath = path.join(cacheDir, `${hash}.mp3`);
+
+    let audioBase64;
+
+    if (fs.existsSync(cachePath)) {
+      console.log('Serving from CACHE (Money Saved!) 💰');
+      const audioBuffer = fs.readFileSync(cachePath);
+      audioBase64 = audioBuffer.toString('base64');
+    } else {
+      console.log('Generating new audio (API Call) 💸');
+
+      // Fix 401: Trim API Key for ElevenLabs
+      const elevenKey = process.env.ELEVENLABS_API_KEY ? process.env.ELEVENLABS_API_KEY.trim() : '';
+
+      const ttsResponse = await axios.post(
+        `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`,
+        {
+          text: assistantText,
+          model_id: "eleven_monolingual_v1",
+          voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+        },
+        {
+          headers: {
+            'xi-api-key': elevenKey,
+            'Content-Type': 'application/json'
+          },
+          responseType: 'arraybuffer'
+        }
+      );
+
+      fs.writeFileSync(cachePath, Buffer.from(ttsResponse.data));
+      audioBase64 = Buffer.from(ttsResponse.data).toString('base64');
+    }
+
+    res.json({
+      userText,
+      assistantText,
+      feedbackText,
+      audioBase64
+    });
+
+  } catch (error) {
+    console.error(`Error in /api/speak [${currentStage}]:`, error.response ? error.response.data : error.message);
+    res.status(500).json({ error: 'Processing failed', stage: currentStage, details: error.message });
+  } finally {
+    if (audioFile) cleanup(audioFile.path);
+  }
+});
+
 app.get('/api/admin/stats', async (req, res) => {
   try {
-    // In production, verify Admin Token here
     const limit = parseInt(req.query.limit) || 20;
-
-    // Note: This requires the usage_logs table to exist in Supabase
     const { data, error } = await supabaseAdmin
       .from('usage_logs')
       .select('*')
@@ -406,7 +466,6 @@ app.get('/api/admin/stats', async (req, res) => {
 
     if (error) throw error;
 
-    // Calculate simple aggregates
     const totalCost = data.reduce((acc, row) => acc + (row.cost_estimated || 0), 0);
     const deepSeekCount = data.filter(row => row.provider_llm === 'deepseek-chat').length;
 
@@ -421,11 +480,10 @@ app.get('/api/admin/stats', async (req, res) => {
 
   } catch (error) {
     console.error('Stats Error:', error);
-    res.status(500).json({ error: 'Failed to fetch stats (Check if table exists)' });
+    res.status(500).json({ error: 'Failed to fetch stats' });
   }
 });
 
-// Global Error Handler
 app.use((err, req, res, next) => {
   console.error('Unhandled Server Error:', err);
   res.status(500).json({ error: 'Internal Server Error', details: err.message });
