@@ -112,7 +112,9 @@ app.get('/api/debug/keys', async (req, res) => {
   }
 
   // 2. Test ElevenLabs (Real generation attempt)
-  const elevenKey = process.env.ELEVENLABS_API_KEY ? process.env.ELEVENLABS_API_KEY.trim() : '';
+  const elevenKey = process.env.ELEVENLABS_KEY_NEW
+    ? process.env.ELEVENLABS_KEY_NEW.trim()
+    : (process.env.ELEVENLABS_API_KEY ? process.env.ELEVENLABS_API_KEY.trim() : '');
   const elevenKeyHint = elevenKey ? `${elevenKey.substring(0, 4)}...` : 'MISSING';
   const voiceId = "21m00Tcm4TlvDq8ikWAM"; // Rachel
 
@@ -464,7 +466,6 @@ app.post('/api/speak', upload.single('audio'), async (req, res) => {
     } else {
       console.log('Generating new audio (API Call) 💸');
 
-      // Fix 401: Trim API Key for ElevenLabs
       // Fix 401: Prefer New Key, Fallback to Old
       const elevenKey = process.env.ELEVENLABS_KEY_NEW
         ? process.env.ELEVENLABS_KEY_NEW.trim()
