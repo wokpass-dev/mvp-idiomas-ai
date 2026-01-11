@@ -378,7 +378,15 @@ const UsersSection = () => {
                                 </div>
                                 <div className="text-right">
                                     <p className="text-sm text-green-400 font-bold">{user.progress || 'Nivel A1'}</p>
-                                    <p className="text-xs text-slate-500">Último acceso: Hoy</p>
+                                    <div className="flex gap-2 justify-end mt-1">
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${user.type === 'Premium' ? 'bg-yellow-500/20 text-yellow-500' : 'bg-slate-700 text-slate-400'}`}>
+                                            {user.type}
+                                        </span>
+                                        <span className="text-[10px] bg-blue-500/20 text-blue-400 px-2 py-0.5 rounded-full">
+                                            {user.usage || 0} msgs
+                                        </span>
+                                    </div>
+                                    <p className="text-xs text-slate-500 mt-1">Último acceso: {user.last_active}</p>
                                 </div>
                             </div>
                         ))}

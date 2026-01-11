@@ -143,12 +143,33 @@ app.get('/api/debug/keys', async (req, res) => {
   res.json(results);
 });
 
-app.get('/api/admin/users', (req, res) => {
-  res.json([
-    { id: 'usr_123', email: 'gabriel@ejemplo.com', progress: 'Nivel A2 (En curso)', last_active: '2026-01-05' },
-    { id: 'usr_456', email: 'demo@idiomas.ai', progress: 'Nivel B1 (Completado)', last_active: '2026-01-04' },
-    { id: 'usr_789', email: 'test@cliente.com', progress: 'Nivel A1 (Inicio)', last_active: '2026-01-04' }
-  ]);
+app.get('/api/admin/users', async (req, res) => {
+  if (!supabaseAdmin) return res.status(500).json({ error: 'DB not connected' });
+
+  try {
+    const { data, error } = await supabaseAdmin
+      .from('profiles')
+      .select('id, email, goal, level, usage_count, is_premium, created_at, last_active')
+      .order('created_at', { ascending: false })
+      .limit(50); // Limit to last 50 for performance
+
+    if (error) throw error;
+
+    // Transform for frontend
+    const users = data.map(u => ({
+      id: u.id,
+      email: u.email || 'No Email', // Supabase Auth might separate email, but profiles might have it if synced
+      progress: `Nivel ${u.level || '?'} (${u.goal || 'General'})`,
+      type: u.is_premium ? 'Premium' : 'Free',
+      usage: u.usage_count,
+      last_active: u.last_active ? new Date(u.last_active).toLocaleDateString() : 'N/A'
+    }));
+
+    res.json(users);
+  } catch (err) {
+    console.error('Admin Users Error:', err);
+    res.status(500).json({ error: 'Failed to fetch users' });
+  }
 });
 
 const scenarios = require('./scenarios');
