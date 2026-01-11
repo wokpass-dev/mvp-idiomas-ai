@@ -111,17 +111,31 @@ app.get('/api/debug/keys', async (req, res) => {
     results.openai = `FAIL: ${e.response ? e.response.status : e.message} (Key: ${openaiKeyHint})`;
   }
 
-  // 2. Test ElevenLabs
+  // 2. Test ElevenLabs (Real generation attempt)
   const elevenKey = process.env.ELEVENLABS_API_KEY ? process.env.ELEVENLABS_API_KEY.trim() : '';
   const elevenKeyHint = elevenKey ? `${elevenKey.substring(0, 4)}...` : 'MISSING';
+  const voiceId = "21m00Tcm4TlvDq8ikWAM"; // Rachel
 
   try {
-    await axios.get('https://api.elevenlabs.io/v1/user', {
-      headers: { 'xi-api-key': elevenKey }
-    });
-    results.elevenlabs = `OK (Key: ${elevenKeyHint})`;
+    const ttsResponse = await axios.post(
+      `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+      {
+        text: "System check okay.",
+        model_id: "eleven_monolingual_v1",
+        voice_settings: { stability: 0.5, similarity_boost: 0.75 }
+      },
+      {
+        headers: {
+          'xi-api-key': elevenKey,
+          'Content-Type': 'application/json'
+        },
+        responseType: 'arraybuffer'
+      }
+    );
+    results.elevenlabs = `OK (Key: ${elevenKeyHint}) - Audio Generated (${ttsResponse.data.length} bytes)`;
   } catch (e) {
-    results.elevenlabs = `FAIL: ${e.response ? e.response.status : e.message} (Key: ${elevenKeyHint})`;
+    const errorDetail = e.response && e.response.data ? Buffer.from(e.response.data).toString() : e.message;
+    results.elevenlabs = `FAIL: ${e.response ? e.response.status : 'ERR'} (Key: ${elevenKeyHint}) - Detail: ${errorDetail}`;
   }
 
   res.json(results);
@@ -451,7 +465,10 @@ app.post('/api/speak', upload.single('audio'), async (req, res) => {
       console.log('Generating new audio (API Call) 💸');
 
       // Fix 401: Trim API Key for ElevenLabs
-      const elevenKey = process.env.ELEVENLABS_API_KEY ? process.env.ELEVENLABS_API_KEY.trim() : '';
+      // Fix 401: Prefer New Key, Fallback to Old
+      const elevenKey = process.env.ELEVENLABS_KEY_NEW
+        ? process.env.ELEVENLABS_KEY_NEW.trim()
+        : (process.env.ELEVENLABS_API_KEY ? process.env.ELEVENLABS_API_KEY.trim() : '');
 
       const ttsResponse = await axios.post(
         `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}`,
