@@ -26,12 +26,23 @@ const PROVIDERS = {
 class AIRouter {
     constructor() {
         this.abRatio = parseFloat(process.env.AB_TEST_RATIO || '0');
+        this.override = null; // 'premium' | 'challenger' | null
+    }
+
+    setOverride(providerId) {
+        console.log(`[AI-ROUTER] Override set to: ${providerId}`);
+        this.override = providerId === 'null' ? null : providerId;
     }
 
     getRoute(userId) {
+        // 1. Manual Override (Admin Force)
+        if (this.override && PROVIDERS[this.override.toUpperCase()]) {
+            return PROVIDERS[this.override.toUpperCase()];
+        }
+
         if (!userId) return PROVIDERS.PREMIUM;
 
-        // Simple deterministic hash of userId
+        // 2. A/B Logic
         const userHash = userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
         const normalizedHash = (userHash % 100) / 100;
 

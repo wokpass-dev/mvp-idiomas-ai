@@ -172,6 +172,28 @@ app.get('/api/admin/users', async (req, res) => {
   }
 });
 
+// Admin Config Endpoint (For Provider Switcher)
+const aiRouter = require('./services/aiRouter'); // Ensure this is singleton
+app.get('/api/admin/config', (req, res) => {
+  res.json({
+    force_provider: aiRouter.override || 'auto',
+    ab_ratio: aiRouter.abRatio
+  });
+});
+
+app.post('/api/admin/config', (req, res) => {
+  const { provider } = req.body;
+  // provider: 'premium' | 'challenger' | 'auto' (null)
+  const overrideVal = provider === 'auto' ? null : provider;
+
+  if (provider) {
+    aiRouter.setOverride(overrideVal);
+    res.json({ success: true, message: `Provider forced to ${overrideVal || 'AUTO'}` });
+  } else {
+    res.status(400).json({ error: 'Missing provider' });
+  }
+});
+
 const scenarios = require('./scenarios');
 
 app.get('/api/scenarios', (req, res) => {

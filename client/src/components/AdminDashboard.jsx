@@ -119,7 +119,9 @@ const AdminDashboard = () => {
                 {activeTab === 'expenses' && <ExpensesSection />}
                 {activeTab === 'billing' && <BillingSection />}
                 {activeTab === 'promos' && <PromotionsSection />}
+                {activeTab === 'promos' && <PromotionsSection />}
                 {activeTab === 'users' && <UsersSection />}
+                {activeTab === 'settings' && <SettingsSection />}
             </main>
         </div>
     );
@@ -393,6 +395,71 @@ const UsersSection = () => {
                         {users.length === 0 && <p className="text-slate-500 text-center">No hay usuarios registrados aún.</p>}
                     </div>
                 )}
+            </div>
+        </motion.div>
+    );
+};
+
+const SettingsSection = () => {
+    const [config, setConfig] = useState({ force_provider: 'auto', ab_ratio: 0 });
+    const [saving, setSaving] = useState(false);
+
+    useEffect(() => {
+        api.get('/admin/config').then(res => setConfig(res.data)).catch(console.error);
+    }, []);
+
+    const updateProvider = (mode) => {
+        setSaving(true);
+        api.post('/admin/config', { provider: mode })
+            .then(res => {
+                setConfig(prev => ({ ...prev, force_provider: mode }));
+                alert(`Modo actualizado a: ${mode.toUpperCase()}`);
+            })
+            .catch(err => alert('Error al guardar configuración'))
+            .finally(() => setSaving(false));
+    };
+
+    return (
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
+            <h2 className="text-3xl font-bold mb-6">Configuración del Sistema</h2>
+
+            <div className="bg-slate-800 rounded-2xl border border-slate-700 p-6 max-w-2xl">
+                <h3 className="text-xl font-semibold mb-4 text-white flex items-center gap-2">
+                    <Activity className="text-purple-400" /> Motor de Inteligencia Artificial
+                </h3>
+                <p className="text-slate-400 mb-6 text-sm">
+                    Selecciona manualmente qué proveedor procesa las solicitudes. Útil para pruebas A/B o contingencia.
+                </p>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <button
+                        onClick={() => updateProvider('auto')}
+                        className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${config.force_provider === 'auto' ? 'bg-blue-600 border-blue-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500'}`}
+                    >
+                        <div className="font-bold">🤖 AUTO (A/B)</div>
+                        <div className="text-xs opacity-70">Balanceo según ID</div>
+                    </button>
+
+                    <button
+                        onClick={() => updateProvider('premium')}
+                        className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${config.force_provider === 'premium' ? 'bg-green-600 border-green-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500'}`}
+                    >
+                        <div className="font-bold">💎 PREMIUM</div>
+                        <div className="text-xs opacity-70">OpenAI + ElevenLabs</div>
+                    </button>
+
+                    <button
+                        onClick={() => updateProvider('challenger')}
+                        className={`p-4 rounded-xl border flex flex-col items-center gap-2 transition-all ${config.force_provider === 'challenger' ? 'bg-purple-600 border-purple-500 text-white' : 'bg-slate-900 border-slate-700 text-slate-400 hover:border-slate-500'}`}
+                    >
+                        <div className="font-bold">🚀 CHALLENGER</div>
+                        <div className="text-xs opacity-70">DeepSeek + Google</div>
+                    </button>
+                </div>
+
+                <div className="mt-6 p-3 bg-slate-900/50 rounded-lg text-xs text-slate-500 font-mono">
+                    Variable Actual: {config.force_provider.toUpperCase()}
+                </div>
             </div>
         </motion.div>
     );
