@@ -58,8 +58,7 @@ const openai = new OpenAI({
 
 app.use(express.urlencoded({ extended: true }));
 
-const whatsappRouter = require('./whatsapp');
-app.use('/api/whatsapp', whatsappRouter);
+// WhatsApp module removed
 
 app.get('/', (req, res) => {
   res.json({
