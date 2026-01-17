@@ -4,7 +4,7 @@ import { supabase } from './supabaseClient';
 import api from './services/api';
 import Login from './components/Login';
 import ChatInterface from './components/ChatInterface';
-import LandingPage from './components/LandingPage';
+import LandingPage from './components/home/LandingPage';
 
 import LanguageSelector from './components/LanguageSelector';
 import StudyPlan from './components/StudyPlan';
@@ -122,6 +122,7 @@ function App() {
           } />
 
           <Route path="/admin" element={<AdminDashboard />} />
+          <Route path="/home" element={<LandingPage />} />
           <Route path="/" element={<LandingPage />} />
         </Routes>
       </div>
