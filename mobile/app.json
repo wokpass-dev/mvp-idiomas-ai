@@ -2,7 +2,7 @@
   "expo": {
     "name": "Talkme",
     "slug": "talkme-mvp",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -42,7 +42,7 @@
     ],
     "extra": {
       "eas": {
-        "projectId": "23ee0320-a2a3-4487-8229-3d60fc46ee9b"
+        "projectId": "a5817220-af2f-4b05-827d-f3b2a0f30b86"
       }
     }
   }

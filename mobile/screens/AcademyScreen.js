@@ -2,7 +2,7 @@ import React from 'react';
 import { StyleSheet, View, ActivityIndicator } from 'react-native';
 import { WebView } from 'react-native-webview';
 
-const WEB_APP_URL = 'https://mvp-idiomas-client.onrender.com';
+const WEB_APP_URL = 'https://www.puentesglobales.com/home/';
 
 export default function AcademyScreen() {
     return (

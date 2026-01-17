@@ -10,6 +10,7 @@ import LanguageSelector from './components/LanguageSelector';
 import StudyPlan from './components/StudyPlan';
 import AdminDashboard from './components/AdminDashboard';
 import OnboardingWizard from './components/Onboarding/OnboardingWizard';
+import PaymentSetup from './components/PaymentSetup';
 
 
 function App() {
@@ -61,32 +62,63 @@ function App() {
     return <div className="min-h-screen bg-slate-900 flex items-center justify-center text-white">Cargando...</div>;
   }
 
+  const getRedirectPath = () => {
+    if (!session) return "/login";
+
+    const { is_student, payment_completed } = session.user.user_metadata || {};
+    // If Freemium (is_student === false) and NO payment, go to payment setup
+    // Explicitly check false because undefined might be old users or admin
+    if (is_student === false && !payment_completed) {
+      return "/payment-setup";
+    }
+
+    return onboardingComplete ? "/dashboard" : "/languages";
+  };
+
+  // Helper for protected routes that should also respect payment gate
+  const ProtectedRoute = ({ children }) => {
+    if (!session) return <Navigate to="/login" />;
+
+    const { is_student, payment_completed } = session.user.user_metadata || {};
+    if (is_student === false && !payment_completed) {
+      return <Navigate to="/payment-setup" />;
+    }
+
+    return children;
+  };
+
   return (
     <Router>
       <div className="min-h-screen bg-black">
         <Routes>
-          <Route path="/login" element={!session ? <Login /> : <Navigate to={onboardingComplete ? "/dashboard" : "/onboarding"} />} />
-
-          <Route path="/onboarding" element={
-            session
-              ? (onboardingComplete ? <Navigate to="/dashboard" /> : <OnboardingWizard session={session} onComplete={() => { setOnboardingComplete(true); }} />)
-              : <Navigate to="/login" />
-          } />
+          <Route path="/login" element={!session ? <Login /> : <Navigate to={getRedirectPath()} />} />
 
           <Route path="/languages" element={
-            session
-              ? (onboardingComplete ? <LanguageSelector /> : <Navigate to="/onboarding" />)
-              : <Navigate to="/login" />
+            <ProtectedRoute>
+              {onboardingComplete ? <LanguageSelector /> : <LanguageSelector />}
+            </ProtectedRoute>
           } />
+
+          <Route path="/onboarding" element={
+            <ProtectedRoute>
+              {onboardingComplete ? <Navigate to="/dashboard" /> : <OnboardingWizard session={session} onComplete={() => { setOnboardingComplete(true); }} />}
+            </ProtectedRoute>
+          } />
+
           <Route path="/study" element={
-            session
-              ? (onboardingComplete ? <StudyPlan /> : <Navigate to="/onboarding" />)
-              : <Navigate to="/login" />
+            <ProtectedRoute>
+              {onboardingComplete ? <StudyPlan /> : <Navigate to="/languages" />}
+            </ProtectedRoute>
           } />
+
           <Route path="/dashboard" element={
-            session
-              ? (onboardingComplete ? <ChatInterface session={session} /> : <Navigate to="/onboarding" />)
-              : <Navigate to="/login" />
+            <ProtectedRoute>
+              {onboardingComplete ? <ChatInterface session={session} /> : <Navigate to="/onboarding" />}
+            </ProtectedRoute>
+          } />
+
+          <Route path="/payment-setup" element={
+            session ? <PaymentSetup session={session} /> : <Navigate to="/login" />
           } />
 
           <Route path="/admin" element={<AdminDashboard />} />

@@ -319,6 +319,87 @@ const BillingSection = () => {
                                 className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-white font-mono text-sm"
                             />
                         </div>
+
+                        {/* Mercado Pago */}
+                        <div className="pt-4 border-t border-slate-700">
+                            <h4 className="text-blue-400 font-semibold mb-2 flex items-center gap-2">Mercado Pago (LATAM)</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs text-slate-500 mb-1">Public Key</label>
+                                    <input
+                                        type="text"
+                                        value={keys.mpPublic || ''}
+                                        onChange={e => setKeys({ ...keys, mpPublic: e.target.value })}
+                                        placeholder="TEST-..."
+                                        className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-white font-mono text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-slate-500 mb-1">Access Token</label>
+                                    <input
+                                        type="password"
+                                        value={keys.mpAccessToken || ''}
+                                        onChange={e => setKeys({ ...keys, mpAccessToken: e.target.value })}
+                                        placeholder="TEST-..."
+                                        className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-white font-mono text-sm"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Lemon Squeezy */}
+                        <div className="pt-4 border-t border-slate-700">
+                            <h4 className="text-purple-400 font-semibold mb-2 flex items-center gap-2">Lemon Squeezy (SaaS)</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs text-slate-500 mb-1">API Key</label>
+                                    <input
+                                        type="password"
+                                        value={keys.lsApiKey || ''}
+                                        onChange={e => setKeys({ ...keys, lsApiKey: e.target.value })}
+                                        placeholder="eyJ..."
+                                        className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-white font-mono text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-slate-500 mb-1">Store ID</label>
+                                    <input
+                                        type="text"
+                                        value={keys.lsStoreId || ''}
+                                        onChange={e => setKeys({ ...keys, lsStoreId: e.target.value })}
+                                        placeholder="12345"
+                                        className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-white font-mono text-sm"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* dLocal */}
+                        <div className="pt-4 border-t border-slate-700">
+                            <h4 className="text-orange-400 font-semibold mb-2 flex items-center gap-2">dLocal (Emerging Markets)</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs text-slate-500 mb-1">X-Login</label>
+                                    <input
+                                        type="text"
+                                        value={keys.dlocalLogin || ''}
+                                        onChange={e => setKeys({ ...keys, dlocalLogin: e.target.value })}
+                                        placeholder="Login ID"
+                                        className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-white font-mono text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs text-slate-500 mb-1">X-Trans-Key</label>
+                                    <input
+                                        type="password"
+                                        value={keys.dlocalTransKey || ''}
+                                        onChange={e => setKeys({ ...keys, dlocalTransKey: e.target.value })}
+                                        placeholder="Trans Key"
+                                        className="w-full bg-slate-900 border border-slate-600 rounded-lg p-2 text-white font-mono text-sm"
+                                    />
+                                </div>
+                            </div>
+                        </div>
                         <button
                             onClick={handleSave}
                             className="w-full mt-4 bg-green-600 hover:bg-green-500 text-white p-3 rounded-lg transition-colors flex items-center justify-center gap-2 font-bold"

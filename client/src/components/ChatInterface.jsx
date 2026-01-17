@@ -8,10 +8,23 @@ import FeedbackModal from './FeedbackModal';
 import PricingModal from './PricingModal';
 
 export default function ChatInterface({ session }) {
-    const [messages, setMessages] = useState([
-        { role: 'system', content: 'You are a helpful language tutor.' },
-        { role: 'assistant', content: '¡Hola! ¿Cómo puedo ayudarte con tu español hoy?' }
-    ]);
+    const [messages, setMessages] = useState(() => {
+        const langInfo = {
+            'en': { greeting: 'Hello! How can I help you learn English today?', prompt: 'You are a helpful English tutor.' },
+            'es': { greeting: '¡Hola! ¿Cómo puedo ayudarte con tu español hoy?', prompt: 'You are a helpful Spanish tutor.' },
+            'fr': { greeting: 'Bonjour! Comment puis-je vous aider avec votre français aujourd\'hui?', prompt: 'You are a helpful French tutor.' },
+            'de': { greeting: 'Hallo! Wie kann ich Ihnen heute mit Ihrem Deutsch helfen?', prompt: 'You are a helpful German tutor.' },
+            'it': { greeting: 'Ciao! Come posso aiutarti con il tuo italiano oggi?', prompt: 'You are a helpful Italian tutor.' },
+            'pt': { greeting: 'Olá! Como posso ajudar com seu português hoje?', prompt: 'You are a helpful Portuguese tutor.' },
+        };
+        const savedLang = localStorage.getItem('targetLanguage') || 'en';
+        const config = langInfo[savedLang] || langInfo['en'];
+
+        return [
+            { role: 'system', content: config.prompt },
+            { role: 'assistant', content: config.greeting }
+        ];
+    });
     const [input, setInput] = useState('');
     const [loading, setLoading] = useState(false);
     const [scenarios, setScenarios] = useState([]);
