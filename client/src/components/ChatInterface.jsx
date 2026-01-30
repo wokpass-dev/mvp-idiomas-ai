@@ -206,9 +206,24 @@ export default function ChatInterface({ session }) {
                                 key={s.id}
                                 onClick={() => {
                                     setSelectedScenario(s);
+
+                                    // CRITICAL FIX: The investor logic lives in the FIRST lesson of the module
+                                    // If we just use s.system_prompt, we might get the top-level one (which is good)
+                                    // BUT let's ensure we are using the detailed one from the modules if it exists.
+
+                                    let activePrompt = s.system_prompt;
+
+                                    // Try to find a lesson prompt if the top one is generic
+                                    if (s.modules && s.modules.length > 0 && s.modules[0].lessons && s.modules[0].lessons.length > 0) {
+                                        // For the investor pitch, the detailed logic is in the first lesson
+                                        if (s.id === 'special_investors') {
+                                            activePrompt = s.modules[0].lessons[0].system_prompt;
+                                        }
+                                    }
+
                                     // Reset chat with new system prompt AND a proactive greeting
                                     setMessages([
-                                        { role: 'system', content: s.system_prompt },
+                                        { role: 'system', content: activePrompt },
                                         { role: 'assistant', content: `¡Entendido! Vamos a practicar "${s.title}". ${s.description} ¿Listo para empezar?` }
                                     ]);
                                 }}
