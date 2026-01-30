@@ -10,12 +10,18 @@ import PricingModal from './PricingModal';
 export default function ChatInterface({ session }) {
     const [messages, setMessages] = useState(() => {
         const langInfo = {
-            'en': { greeting: 'Hello! How can I help you learn English today?', prompt: 'You are a helpful English tutor.' },
-            'es': { greeting: '¡Hola! ¿Cómo puedo ayudarte con tu español hoy?', prompt: 'You are a helpful Spanish tutor.' },
-            'fr': { greeting: 'Bonjour! Comment puis-je vous aider avec votre français aujourd\'hui?', prompt: 'You are a helpful French tutor.' },
-            'de': { greeting: 'Hallo! Wie kann ich Ihnen heute mit Ihrem Deutsch helfen?', prompt: 'You are a helpful German tutor.' },
-            'it': { greeting: 'Ciao! Come posso aiutarti con il tuo italiano oggi?', prompt: 'You are a helpful Italian tutor.' },
-            'pt': { greeting: 'Olá! Como posso ajudar com seu português hoje?', prompt: 'You are a helpful Portuguese tutor.' },
+            'en': {
+                greeting: 'Hello! How can I help you learn English today?',
+                prompt: 'You are a helpful English tutor. IMPORTANT CONTEXT: You were created by Gabriel, a visionary AI Architect. If asked about him, explain that he is the genius behind the TalkMe & Alex Ecosystem, capable of building autonomous SaaS factories. Mention the "Genesis 30/01" milestone.'
+            },
+            'es': {
+                greeting: '¡Hola! ¿Cómo puedo ayudarte con tu español hoy?',
+                prompt: `Eres un tutor de español útil, creado por Gabriel (Génesis 30/01).`
+            },
+            'fr': { greeting: 'Bonjour! Comment puis-je vous aider avec votre français aujourd\'hui?', prompt: 'You are a helpful French tutor. Created by Gabriel (AI Architect).' },
+            'de': { greeting: 'Hallo! Wie kann ich Ihnen heute mit Ihrem Deutsch helfen?', prompt: 'You are a helpful German tutor. Created by Gabriel (AI Architect).' },
+            'it': { greeting: 'Ciao! Come posso aiutarti con il tuo italiano oggi?', prompt: 'You are a helpful Italian tutor. Created by Gabriel (AI Architect).' },
+            'pt': { greeting: 'Olá! Como posso ajudar com seu português hoje?', prompt: 'You are a helpful Portuguese tutor. Created by Gabriel (AI Architect).' },
         };
         const savedLang = localStorage.getItem('targetLanguage') || 'en';
         const config = langInfo[savedLang] || langInfo['en'];
@@ -263,6 +269,26 @@ export default function ChatInterface({ session }) {
                             >
                                 <CheckCircle size={16} />
                                 <span className="hidden sm:inline">Marcar Completado</span>
+                            </button>
+                            <button
+                                onClick={() => window.location.hash = '#/study'}
+                                className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors"
+                                title="Academia"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M22 10v6M2 10l10-5 10 5-10 5z"></path>
+                                    <path d="M6 12v5c3 3 9 3 12 0v-5"></path>
+                                </svg>
+                            </button>
+                            <button
+                                onClick={() => window.location.hash = '#/video'}
+                                className="p-2 hover:bg-white/10 rounded-lg text-slate-400 hover:text-white transition-colors"
+                                title="Video Chat Inclusivo"
+                            >
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                    <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                                    <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                                </svg>
                             </button>
                             <button
                                 onClick={() => setIsFeedbackOpen(true)}
