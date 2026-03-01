@@ -1,6 +1,7 @@
 // aiRouter.js for TalkMe (CommonJS) - V6.0 PERSISTENT MEMORY
 const axios = require('axios');
 const googleTTS = require('google-tts-api');
+const { GoogleGenerativeAI } = require('@google/generative-ai');
 require('dotenv').config();
 
 // --- Configuration & Branding ---
@@ -126,10 +127,12 @@ async function generateResponse(userMessage, personaKey = 'ALEX_MIGRATION', hist
     // Ordered Providers: Gemini -> OpenAI -> DeepSeek -> (Future: Alex-Brain)
 
     // 1. Gemini
-    try {
-        responseText = await withTimeout(callGeminiStable(normalizedUserMessage, systemPrompt, history), GEMINI_TIMEOUT, "Gemini");
-    } catch (e) {
-        console.warn(`⚠️ [aiRouter] Gemini failed: ${e.message}`);
+    if (GENAI_API_KEY) {
+        try {
+            responseText = await withTimeout(callGeminiSDK(normalizedUserMessage, systemPrompt, history), GEMINI_TIMEOUT, "Gemini");
+        } catch (e) {
+            console.warn(`⚠️ [aiRouter] Gemini SDK failed: ${e.message}`);
+        }
     }
 
     // 2. OpenAI
@@ -173,35 +176,50 @@ async function generateResponse(userMessage, personaKey = 'ALEX_MIGRATION', hist
 
 // --- Specific AI Implementations ---
 
-async function callGeminiStable(message, systemPrompt, history) {
+async function callGeminiSDK(message, systemPrompt, history) {
     if (!GENAI_API_KEY) return null;
-    const apiVersions = ['v1beta', 'v1'];
-    const modelNames = ["gemini-1.5-flash", "gemini-1.5-flash-latest"];
 
-    for (const ver of apiVersions) {
-        for (const modelName of modelNames) {
-            const url = `https://generativelanguage.googleapis.com/${ver}/models/${modelName}:generateContent?key=${GENAI_API_KEY}`;
-            const payload = {
-                system_instruction: { parts: [{ text: systemPrompt }] },
-                contents: [...formatHistoryForREST(history), { role: "user", parts: [{ text: message }] }],
-                generationConfig: { maxOutputTokens: 1000, temperature: 0.7 },
-                safetySettings: [
-                    { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-                    { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-                    { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-                    { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
-                ]
-            };
+    const genAI = new GoogleGenerativeAI(GENAI_API_KEY);
+    // Use gemini-2.0-flash as it is more likely to be available and stable in v1beta according to our tests
+    const model = genAI.getGenerativeModel({
+        model: "gemini-2.0-flash",
+        systemInstruction: systemPrompt
+    });
 
-            try {
-                const response = await axios.post(url, payload, { timeout: 10000 });
-                if (response.data.candidates?.[0]?.content) {
-                    return response.data.candidates[0].content.parts[0].text;
-                }
-            } catch (err) { continue; }
+    try {
+        const chat = model.startChat({
+            history: formatHistoryForSDK(history),
+            generationConfig: { maxOutputTokens: 1000, temperature: 0.7 }
+        });
+
+        const result = await chat.sendMessage(message);
+        return result.response.text();
+    } catch (err) {
+        console.error('❌ [callGeminiSDK] Error:', err.message);
+        return null;
+    }
+}
+
+function formatHistoryForSDK(history) {
+    let chatHistory = [];
+    let lastRole = null;
+
+    for (const msg of (history || [])) {
+        let currentRole = (msg.role === 'user' || msg.role === 'model') ? msg.role : (msg.role === 'assistant' ? 'model' : 'user');
+        const text = String(msg.content || "").trim();
+
+        if (text && currentRole !== lastRole) {
+            chatHistory.push({ role: currentRole, parts: [{ text: text }] });
+            lastRole = currentRole;
         }
     }
-    return null;
+
+    if (chatHistory.length > 0) {
+        if (chatHistory[0].role !== 'user') chatHistory.shift();
+        if (chatHistory.length > 0 && chatHistory[chatHistory.length - 1].role !== 'model') chatHistory.pop();
+    }
+
+    return chatHistory.slice(-10);
 }
 
 async function callOpenAI(message, systemPrompt, history) {
