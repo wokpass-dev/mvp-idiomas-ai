@@ -25,7 +25,7 @@ export class GeminiService {
     const systemInstruction = getTutorSystemPrompt(level, language);
 
     const model = this.genAI.getGenerativeModel({
-      model: 'gemini-1.5-flash',
+      model: 'gemini-2.0-flash',
       systemInstruction,
       generationConfig: {
         responseMimeType: "application/json",

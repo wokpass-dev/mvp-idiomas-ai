@@ -49,7 +49,7 @@ export const generateAIChatResponse = async (
 
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
   const model = genAI.getGenerativeModel({
-    model: 'gemini-1.5-flash',
+    model: 'gemini-2.0-flash',
     systemInstruction: getSystemInstruction(profile),
     generationConfig: {
       responseMimeType: "application/json",
@@ -98,7 +98,7 @@ export const transcribeAudio = async (audioBlob: Blob): Promise<string> => {
     return "";
   }
   const genAI = new GoogleGenerativeAI(GEMINI_API_KEY);
-  const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+  const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
 
   const reader = new FileReader();
   const base64Promise = new Promise<string>((resolve, reject) => {
