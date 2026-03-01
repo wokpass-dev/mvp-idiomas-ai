@@ -1,8 +1,0 @@
-
-{
-  "name": "TalkMe: AI Language Tutor",
-  "description": "An adaptive language tutor that follows CEFR levels (A1-C2), provides subtle grammar corrections, and uses high-quality TTS for immersion.",
-  "requestFramePermissions": [
-    "microphone"
-  ]
-}
