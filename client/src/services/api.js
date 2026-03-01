@@ -1,7 +1,11 @@
 import axios from 'axios';
 
 const getBaseUrl = () => {
-    // FORCE HARDCODED URL FOR PRODUCTION TO AVOID ENV VAR ISSUES
+    // Use environment variable for production, fallback to Render URL or localhost
+    if (import.meta.env.VITE_API_URL) {
+        return import.meta.env.VITE_API_URL;
+    }
+
     if (import.meta.env.PROD) {
         return 'https://mvp-idiomas-server.onrender.com/api';
     }

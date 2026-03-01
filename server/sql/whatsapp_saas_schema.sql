@@ -11,7 +11,7 @@ create table public.saas_clients (
     api_key text, -- Evolution API token for this instance
     plan_type text default 'free', -- free, pro, enterprise
     status text default 'active', -- active, paused, disconnected
-    settings jsonb default '{"human_delay": 2000, "bot_name": "Alex"}'::jsonb
+    settings jsonb default '{"human_delay": 2000, "bot_name": "SpeakGo"}'::jsonb
 );
 
 -- 2. Chats Table (The end users talking to your clients)

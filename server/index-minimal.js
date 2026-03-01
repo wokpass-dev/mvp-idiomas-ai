@@ -8,7 +8,7 @@ const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const BRAND_NAME = "ALEX";
+const BRAND_NAME = "SPEAKGO";
 
 app.use(cors());
 app.use(express.json());
@@ -26,7 +26,7 @@ app.get('/health', (req, res) => {
 app.post('/api/chat', async (req, res) => {
     const { message, userId, persona } = req.body;
     try {
-        const response = await aiRouter.generateResponse(message, persona || 'ALEX_MIGRATION', [], userId || 'test_user');
+        const response = await aiRouter.generateResponse(message, persona || 'SPEAKGO_MIGRATION', [], userId || 'test_user');
         res.json({ assistant: response });
     } catch (error) {
         res.status(500).json({ error: error.message });

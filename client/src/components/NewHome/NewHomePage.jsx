@@ -208,7 +208,7 @@ const NewHomePage = () => {
                             },
                             {
                                 title: "Entrenamiento de Entrevistas",
-                                desc: "Practicá con Alex AI para responder preguntas técnicas y culturales en tiempo real.",
+                                desc: "Practicá con SpeakGo AI para responder preguntas técnicas y culturales en tiempo real.",
                                 icon: <Bot className="text-indigo-500" />,
                                 image: "img/landing/uploaded_image_1_1768144162832.jpg"
                             },
@@ -219,7 +219,7 @@ const NewHomePage = () => {
                                 image: "img/landing/uploaded_image_1_1768144345868.jpg"
                             },
                             {
-                                title: "Talkme AI: Idiomas",
+                                title: "SpeakGo AI: Idiomas",
                                 desc: "Conversación fluida en situaciones reales de trabajo y vida.",
                                 icon: <Mic className="text-emerald-500" />,
                                 image: "img/landing/uploaded_image_2_1768144162832.jpg"
@@ -350,7 +350,7 @@ const NewHomePage = () => {
                     <MessageCircle size={32} className="text-white fill-current" />
                 </div>
                 <div className="bg-white px-4 py-2 rounded-xl shadow-xl border border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap hidden md:block">
-                    <span className="font-black text-xs text-slate-950">Chateá con <span className="text-blue-600">Alex</span></span>
+                    <span className="font-black text-xs text-slate-950">Chateá con <span className="text-blue-600">SpeakGo</span></span>
                 </div>
             </a>
 

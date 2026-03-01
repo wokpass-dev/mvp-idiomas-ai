@@ -88,7 +88,7 @@ async function startSock() {
                         const completion = await openai.chat.completions.create({
                             model: "gpt-4o",
                             messages: [
-                                { role: "system", content: "Eres Alex, un asistente útil." },
+                                { role: "system", content: "Eres SpeakGo, un asistente útil." },
                                 { role: "user", content: text }
                             ],
                             max_tokens: 100

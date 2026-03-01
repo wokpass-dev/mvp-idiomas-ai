@@ -60,7 +60,7 @@ const ProgramDetail = () => {
                 "Búsqueda dirigida en portales premium",
                 "Entrenamiento intensivo para entrevistas",
                 "Coaching de resiliencia frente al rechazo",
-                "Simulaciones reales con Alex AI"
+                "Simulaciones reales con SpeakGo AI"
             ],
             icon: <Target className="text-emerald-500" />,
             photo: "img/landing/uploaded_image_1_1768144162832.jpg",
@@ -189,7 +189,7 @@ const ProgramDetail = () => {
                     <MessageCircle size={32} className="text-white fill-current" />
                 </div>
                 <div className="bg-white px-4 py-2 rounded-xl shadow-xl border border-slate-100 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap hidden md:block">
-                    <span className="font-black text-xs text-slate-950">Chateá con <span className="text-blue-600">Alex</span></span>
+                    <span className="font-black text-xs text-slate-950">Chateá con <span className="text-blue-600">SpeakGo</span></span>
                 </div>
             </a>
 

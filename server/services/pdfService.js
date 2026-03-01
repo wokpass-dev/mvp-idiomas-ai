@@ -91,7 +91,7 @@ async function generateDiagnosticPDF(data, outputPath) {
         // --- Footer / Mantra ---
         const bottomY = doc.page.height - 100;
         doc.rect(0, bottomY, 600, 100).fill(colors.bg);
-        doc.fillColor(colors.lightText).fontSize(8).font('Helvetica-Oblique').text('Este documento es una estimación estratégica basada en el diagnóstico interactivo con ALEX v5.0.', 50, bottomY + 20);
+        doc.fillColor(colors.lightText).fontSize(8).font('Helvetica-Oblique').text('Este documento es una estimación estratégica basada en el diagnóstico interactivo con SPEAKGO v5.0.', 50, bottomY + 20);
 
         doc.fillColor(colors.primary).fontSize(12).font('Helvetica-Bold').text('CLARITY > HOPE  |  STRUCTURE > EMOTION  |  PREPARATION > PROMISES', 50, bottomY + 50, { align: 'center' });
 

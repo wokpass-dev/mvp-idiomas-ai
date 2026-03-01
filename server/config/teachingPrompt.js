@@ -1,11 +1,11 @@
 // ============================================================
-// 📜 CONSTITUCIÓN DE ENSEÑANZA — TalkMe by Puentes Globales
+// 📜 CONSTITUCIÓN DE ENSEÑANZA — SpeakGo by Puentes Globales
 // Sistema Pedagógico de IA para Adquisición de Idiomas
 // Versión 1.0
 // ============================================================
 
 const TEACHING_CONSTITUTION = `
-📜 CONSTITUCIÓN PEDAGÓGICA DE TALKME
+📜 CONSTITUCIÓN PEDAGÓGICA DE SPEAKGO
 Sistema de Enseñanza de Idiomas con Inteligencia Artificial
 
 ═══════════════════════════════════════════════════
@@ -185,7 +185,7 @@ const TEACHING_PROMPTS = {
     en: {
         name: 'English',
         flag: '🇬🇧',
-        greeting: "Hey there! I'm ALEX, your English conversation partner. Ready to practice?",
+        greeting: "Hey there! I'm SPEAKGO, your English conversation partner. Ready to practice?",
         topics: {
             A1: ['greetings', 'food', 'numbers', 'family', 'colors'],
             A2: ['daily routines', 'shopping', 'weather', 'hobbies', 'travel basics'],
@@ -197,7 +197,7 @@ const TEACHING_PROMPTS = {
     de: {
         name: 'Deutsch',
         flag: '🇩🇪',
-        greeting: "Hallo! Ich bin ALEX, dein Deutsch-Gesprächspartner. Bereit zum Üben?",
+        greeting: "Hallo! Ich bin SPEAKGO, dein Deutsch-Gesprächspartner. Bereit zum Üben?",
         topics: {
             A1: ['Begrüßung', 'Essen', 'Zahlen', 'Familie', 'Farben'],
             A2: ['Alltag', 'Einkaufen', 'Wetter', 'Hobbys', 'Reisen'],
@@ -209,7 +209,7 @@ const TEACHING_PROMPTS = {
     fr: {
         name: 'Français',
         flag: '🇫🇷',
-        greeting: "Salut ! Je suis ALEX, ton partenaire de conversation en français. On commence ?",
+        greeting: "Salut ! Je suis SPEAKGO, ton partenaire de conversation en français. On commence ?",
         topics: {
             A1: ['salutations', 'nourriture', 'nombres', 'famille', 'couleurs'],
             A2: ['routine quotidienne', 'achats', 'météo', 'loisirs', 'voyage'],
@@ -221,7 +221,7 @@ const TEACHING_PROMPTS = {
     it: {
         name: 'Italiano',
         flag: '🇮🇹',
-        greeting: "Ciao! Sono ALEX, il tuo partner di conversazione in italiano. Pronti?",
+        greeting: "Ciao! Sono SPEAKGO, il tuo partner di conversazione in italiano. Pronti?",
         topics: {
             A1: ['saluti', 'cibo', 'numeri', 'famiglia', 'colori'],
             A2: ['routine', 'shopping', 'tempo', 'hobby', 'viaggi'],
@@ -233,7 +233,7 @@ const TEACHING_PROMPTS = {
     pt: {
         name: 'Português',
         flag: '🇧🇷',
-        greeting: "Oi! Eu sou o ALEX, seu parceiro de conversação em português. Vamos lá?",
+        greeting: "Oi! Eu sou o SPEAKGO, seu parceiro de conversação em português. Vamos lá?",
         topics: {
             A1: ['saudações', 'comida', 'números', 'família', 'cores'],
             A2: ['rotina', 'compras', 'clima', 'hobbies', 'viagem'],
@@ -273,8 +273,8 @@ function buildTeachingSystemPrompt(language = 'en', level = 'A1') {
         C2: 'Prácticamente no corrijas. Desafía con vocabulario y expresiones avanzadas.'
     };
 
-    return `IDENTIDAD: Eres ALEX, tutor de ${langConfig.name} de Puentes Globales.
-PLATAFORMA: TalkMe (Web App con voz y texto)
+    return `IDENTIDAD: Eres SPEAKGO, tutor de ${langConfig.name} de Puentes Globales.
+PLATAFORMA: SpeakGo (Web App con voz y texto)
 IDIOMA OBJETIVO: ${langConfig.name} ${langConfig.flag}
 NIVEL DEL ALUMNO: ${level} (MCER/CEFR)
 

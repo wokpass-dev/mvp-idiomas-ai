@@ -60,7 +60,7 @@ const LandingPage = () => {
                                 to="/login"
                                 className="px-8 py-3 bg-blue-600/20 hover:bg-blue-600/40 border border-blue-500/50 text-blue-300 rounded-full font-bold text-lg transition-all flex items-center justify-center gap-2 backdrop-blur-md"
                             >
-                                <Mic size={20} /> Probar Talkme Ahora
+                                <Mic size={20} /> Probar SpeakGo Ahora
                             </Link>
                         </div>
                     </motion.div>
@@ -119,11 +119,11 @@ const LandingPage = () => {
                 </div>
             </section>
 
-            {/* 4. TALKME SOLUTION (Text Only) */}
+            {/* 4. SPEAKGO SOLUTION (Text Only) */}
             <section className="py-20 bg-slate-800">
                 <div className="container mx-auto px-6 max-w-4xl text-center">
                     <h2 className="text-3xl md:text-5xl font-bold mb-8">
-                        Nuestra Solución: Talkme AI
+                        Nuestra Solución: SpeakGo AI
                     </h2>
                     <p className="text-xl text-slate-300 mb-8 leading-relaxed">
                         Contamos con una plataforma que brinda <strong>asesoramiento inteligente</strong> con respuestas inmediatas.
@@ -134,7 +134,7 @@ const LandingPage = () => {
                     </p>
 
                     <Link to="/login" className="inline-flex items-center gap-3 px-10 py-5 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl font-bold text-xl shadow-lg hover:shadow-blue-500/40 transition-all transform hover:-translate-y-1">
-                        <Mic size={28} /> Probar Talkme Ahora
+                        <Mic size={28} /> Probar SpeakGo Ahora
                     </Link>
                 </div>
             </section>

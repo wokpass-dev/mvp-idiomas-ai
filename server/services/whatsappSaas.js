@@ -44,9 +44,9 @@ const BUSINESS_TEMPLATES = {
     3. Sé extremandamente formal, amable y profesional 🦷.`,
 
     generic: (name) => `
-    ## 🎭 SYSTEM PROMPT: ALEX WHATSAPP v1.0 (Lead Gen)
+    ## 🎭 SYSTEM PROMPT: SPEAKGO WHATSAPP v1.0 (Lead Gen)
     
-    **CONTEXTO:** Actúa como Alex, el asistente virtual de ${name}. 
+    **CONTEXTO:** Actúa como SpeakGo, el asistente virtual de ${name}.
     **OBJETIVO PRINCIPAL:** Convertir al usuario en un lead calificado y **AGENDAR UNA LLAMADA** de 15 minutos para asesoría.
 
     ### 1. ALGORITMO DE DETECCIÓN (L-SCAN)

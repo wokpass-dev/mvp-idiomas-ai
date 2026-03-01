@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS conversations (
     role TEXT NOT NULL CHECK (role IN ('user', 'assistant', 'system')),
     content TEXT NOT NULL,
     provider TEXT DEFAULT 'unknown',        -- gemini, openai, deepseek
-    persona TEXT DEFAULT 'TALKME',          -- TALKME, ALEX_MIGRATION, etc.
+    persona TEXT DEFAULT 'SPEAKGO',          -- SPEAKGO, SPEAKGO_MIGRATION, etc.
     language TEXT DEFAULT 'en',             -- en, fr, de, it, pt
     tokens_used INTEGER DEFAULT 0,
     created_at TIMESTAMPTZ DEFAULT now()
