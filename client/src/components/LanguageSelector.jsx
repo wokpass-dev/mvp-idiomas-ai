@@ -16,9 +16,21 @@ const languages = [
 const LanguageSelector = () => {
     const navigate = useNavigate();
 
-    const handleSelect = (langId) => {
-        // Save preference (mock for now, ideally to Supabase/Context)
+    const handleSelect = async (langId) => {
         localStorage.setItem('targetLanguage', langId);
+        // Check if onboarding is already done — skip to dashboard
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+                const res = await api.get(`/profile/${user.id}`);
+                if (res.data && res.data.onboarding_completed) {
+                    navigate('/dashboard');
+                    return;
+                }
+            }
+        } catch (e) {
+            console.error('Profile check error:', e);
+        }
         navigate('/onboarding');
     };
 

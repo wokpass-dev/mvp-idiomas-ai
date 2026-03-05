@@ -97,7 +97,7 @@ function App() {
 
           <Route path="/languages" element={
             <ProtectedRoute>
-              {onboardingComplete ? <LanguageSelector /> : <LanguageSelector />}
+              <LanguageSelector />
             </ProtectedRoute>
           } />
 
