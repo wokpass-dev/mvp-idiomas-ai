@@ -1,7 +1,7 @@
 
 import { GoogleGenerativeAI, SchemaType } from "@google/generative-ai";
 import { getTutorSystemPrompt } from "../constants";
-import { CEFRLevel, Language, TutorFeedback } from "../types";
+import { CEFRLevel, Language, TutorFeedback, LANGUAGE_TTS_CODES } from "../types";
 
 // The API key is injected via environment variables.
 const API_KEY = import.meta.env.VITE_API_KEY as string;
@@ -57,11 +57,14 @@ export class GeminiService {
     }
   }
 
-  async generateSpeech(text: string): Promise<Uint8Array> {
-    // Fallback to Google Translate TTS since Gemini TTS is not available in the standard SDK
+  async generateSpeech(text: string, language: Language = 'English'): Promise<Uint8Array> {
     try {
-      const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(text)}&tl=en&client=tw-ob`;
+      const langCode = LANGUAGE_TTS_CODES[language] || 'en';
+      // Truncate text if too long for TTS endpoint (max ~200 chars works best)
+      const truncated = text.length > 200 ? text.substring(0, 197) + '...' : text;
+      const url = `https://translate.google.com/translate_tts?ie=UTF-8&q=${encodeURIComponent(truncated)}&tl=${langCode}&client=tw-ob`;
       const response = await fetch(url);
+      if (!response.ok) throw new Error(`TTS returned ${response.status}`);
       const buffer = await response.arrayBuffer();
       return new Uint8Array(buffer);
     } catch (error) {

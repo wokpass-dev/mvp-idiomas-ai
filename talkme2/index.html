@@ -4,7 +4,17 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>TalkMe: AI Language Tutor</title>
+  <title>TalkMe — AI Language Tutor | Practice English, Spanish, French & More</title>
+  <meta name="description"
+    content="Practice languages with an AI tutor that adapts to your level. Real-time corrections, voice input, and structured CEFR lessons for English, Spanish, German, French, Portuguese, and Italian.">
+  <meta name="theme-color" content="#4f46e5">
+  <meta property="og:title" content="TalkMe — AI Language Tutor">
+  <meta property="og:description"
+    content="Practice languages with an adaptive AI tutor. Real-time corrections, voice input, CEFR levels A1-C2.">
+  <meta property="og:type" content="website">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>💬</text></svg>">
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -22,6 +32,23 @@
 
     .chat-shadow {
       box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+    }
+
+    /* Smooth animations */
+    @keyframes fadeInUp {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .animate-in {
+      animation: fadeInUp 0.3s ease-out;
     }
   </style>
   <script type="importmap">
