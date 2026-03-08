@@ -13,7 +13,54 @@ const App: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const mediaRecorderRef = React.useRef<MediaRecorder | null>(null);
+  const chunksRef = React.useRef<Blob[]>([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+      const recorder = new MediaRecorder(stream, { mimeType });
+
+      mediaRecorderRef.current = recorder;
+      chunksRef.current = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunksRef.current.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        const blob = new Blob(chunksRef.current, { type: mimeType });
+        setIsLoading(true);
+        try {
+          const transcription = await gemini.transcribeAudio(blob);
+          if (transcription.trim()) {
+            sendMessage(transcription);
+          }
+        } catch (error) {
+          console.error("STT Error:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      };
+
+      recorder.start();
+      setIsRecording(false); // Quick hack to force rerender below if needed, wait setIsRecording(true)
+      setIsRecording(true);
+    } catch (err) {
+      alert("Microphone access denied or error accessing microphone.");
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      mediaRecorderRef.current.stream.getTracks().forEach(t => t.stop());
+    }
+  };
 
   const sendMessage = useCallback(async (text: string) => {
     if (!text.trim()) return;
@@ -46,7 +93,7 @@ const App: React.FC = () => {
       };
 
       setMessages(prev => [...prev, tutorMessage]);
-      
+
       // Auto-play TTS for immersion
       const audioData = await gemini.generateSpeech(feedback.response_text);
       await playPcmAudio(audioData);
@@ -80,14 +127,14 @@ const App: React.FC = () => {
       {/* Sidebar Overlay for Mobile */}
       <div className={`${isSidebarOpen ? 'block' : 'hidden'} md:block fixed md:relative inset-0 z-40 bg-white md:bg-transparent`}>
         <div className="h-full flex flex-col relative">
-          <button 
+          <button
             className="md:hidden absolute top-4 right-4 text-slate-400"
             onClick={() => setIsSidebarOpen(false)}
           >
             Close
           </button>
-          <Sidebar 
-            level={level} 
+          <Sidebar
+            level={level}
             setLevel={(l) => { setLevel(l); setIsSidebarOpen(false); }}
             language={language}
             setLanguage={(lang) => { setLanguage(lang); setIsSidebarOpen(false); }}
@@ -105,18 +152,18 @@ const App: React.FC = () => {
           <div className="text-xs text-slate-400 font-medium uppercase tracking-widest">Learning Session Active</div>
         </header>
 
-        <ChatWindow 
-          messages={messages} 
+        <ChatWindow
+          messages={messages}
           onPlayVoice={handlePlayVoice}
           isLoading={isLoading}
         />
 
         <div className="p-4 md:p-8 bg-gradient-to-t from-slate-50 to-transparent">
-          <form 
+          <form
             onSubmit={(e) => { e.preventDefault(); sendMessage(inputValue); }}
             className="max-w-4xl mx-auto flex items-center gap-2 md:gap-4 glass p-2 rounded-2xl shadow-xl border border-white"
           >
-            <input 
+            <input
               type="text"
               value={inputValue}
               onChange={(e) => setInputValue(e.target.value)}
@@ -125,14 +172,18 @@ const App: React.FC = () => {
               className="flex-1 bg-transparent border-none focus:ring-0 px-4 py-3 outline-none text-slate-700"
             />
             <div className="flex items-center gap-1">
-              <button 
+              <button
                 type="button"
-                className="p-3 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-all"
-                title="Speech Recognition (Coming soon)"
+                onMouseDown={startRecording}
+                onMouseUp={stopRecording}
+                onTouchStart={startRecording}
+                onTouchEnd={stopRecording}
+                className={`p-3 rounded-xl transition-all ${isRecording ? 'bg-red-500 text-white animate-pulse' : 'text-slate-400 hover:text-indigo-600 hover:bg-indigo-50'}`}
+                title="Hold to speak"
               >
                 <Mic size={20} />
               </button>
-              <button 
+              <button
                 type="submit"
                 disabled={isLoading || !inputValue.trim()}
                 className="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white p-3 rounded-xl shadow-md transition-all flex items-center gap-2"
@@ -143,9 +194,9 @@ const App: React.FC = () => {
             </div>
           </form>
           <div className="mt-3 text-center">
-             <p className="text-[10px] text-slate-400 uppercase font-medium tracking-widest">
-                Deployment Guide: 1. Set API_KEY in env 2. Run npm start 3. Deploy to Firebase/Cloud Run
-             </p>
+            <p className="text-[10px] text-slate-400 uppercase font-medium tracking-widest">
+              Deployment Guide: 1. Set API_KEY in env 2. Run npm start 3. Deploy to Firebase/Cloud Run
+            </p>
           </div>
         </div>
       </main>

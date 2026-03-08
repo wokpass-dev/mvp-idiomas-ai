@@ -69,6 +69,35 @@ export class GeminiService {
       throw new Error("No audio generated");
     }
   }
+
+  async transcribeAudio(audioBlob: Blob): Promise<string> {
+    try {
+      const model = this.genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => {
+          const result = reader.result as string;
+          const base64 = result.split(',')[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(audioBlob);
+      });
+
+      const base64Data = await base64Promise;
+      const mimeType = audioBlob.type.includes('mp4') ? 'audio/mp4' : 'audio/webm';
+
+      const result = await model.generateContent([
+        { inlineData: { data: base64Data, mimeType: mimeType } },
+        { text: "Transcribe exactly what the audio says. Return only the text without markdown or commentary." }
+      ]);
+
+      return result.response.text().trim();
+    } catch (error) {
+      console.error("STT Failed:", error);
+      return "";
+    }
+  }
 }
 
 export const gemini = new GeminiService();
