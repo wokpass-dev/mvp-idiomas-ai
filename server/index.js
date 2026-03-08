@@ -84,6 +84,10 @@ app.get('/test-qr', (req, res) => {
 const whatsappSaasRouter = require('./services/whatsappSaas');
 app.use('/webhook/whatsapp', whatsappSaasRouter);
 
+// TalkMe V2 Standalone Module
+const talkmeRoutes = require('./talkmeRoutes');
+app.use('/api/talkme', talkmeRoutes);
+
 
 app.get('/', (req, res) => {
   res.json({
