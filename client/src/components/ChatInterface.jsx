@@ -96,7 +96,6 @@ export default function ChatInterface({ session }) {
         if (captured && typeof captured.text === 'string') {
             setInput(captured.text);
             // Simular el envío del mensaje de texto
-            const fakeEvent = { preventDefault: () => { } };
             // Usamos un pequeño delay para que el usuario vea el texto antes de enviarse
             setTimeout(() => handleManualSend(captured.text), 500);
             return;
@@ -176,7 +175,6 @@ export default function ChatInterface({ session }) {
         } catch (error) {
             console.error('Failed to send message:', error);
 
-            // Check for Freemium Limit (402)
             // Check for Freemium Limit (402)
             if (error.response && error.response.status === 402) {
                 // Open Pricing Modal + Show Message
